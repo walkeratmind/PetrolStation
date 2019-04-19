@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Petrol Station</string>
+    <string name="title_activity_maps">Map</string>
+
+
+    <string name="GOOGLE_MAPS_API_KEY">AIzaSyCJP6_soVTeMM8z-tkhg-au0HmHvvRv0Uw</string>
+</resources>
