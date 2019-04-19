@@ -10,12 +10,12 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
+import static com.example.petrolstation.Constants.ERROR_DIALOG_REQUEST;
+
 public class MainActivity extends AppCompatActivity {
 
 
     public static final String TAG = "Main Activity";
-
-    public static final int ERROR_DIALOG_REQUEST = 9001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
