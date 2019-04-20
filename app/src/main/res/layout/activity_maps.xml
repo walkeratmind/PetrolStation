@@ -16,17 +16,29 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"/>
 
-    <android.support.design.widget.BottomNavigationView
-        android:id="@+id/bottom_navigation_bar"
-        android:layout_width="match_parent"
-        android:layout_height="54dp"
+    <ImageView
+        android:id="@+id/B_gas_station"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_local_gas_station_black_24dp"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="-1dp"
-        app:itemBackground="@android:color/white"
-        app:itemIconTint="@android:color/black"
-        app:itemTextColor="@android:color/black"
-        app:menu="@menu/bottom_menu">
+        android:layout_alignParentRight="true"
+        android:layout_margin="8dp"
+        android:padding="8dp"
+        android:onClick="onClick"
+        />
 
-    </android.support.design.widget.BottomNavigationView>
+    <!--<android.support.design.widget.BottomNavigationView-->
+        <!--android:id="@+id/bottom_navigation_bar"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="54dp"-->
+        <!--android:layout_alignParentBottom="true"-->
+        <!--android:layout_marginBottom="-1dp"-->
+        <!--app:itemBackground="@android:color/white"-->
+        <!--app:itemIconTint="@android:color/black"-->
+        <!--app:itemTextColor="@android:color/black"-->
+        <!--app:menu="@menu/bottom_menu">-->
+
+    <!--</android.support.design.widget.BottomNavigationView>-->
 
 </RelativeLayout>

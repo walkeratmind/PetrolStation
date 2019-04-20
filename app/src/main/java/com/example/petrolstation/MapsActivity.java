@@ -17,6 +17,7 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -173,6 +174,41 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        }
 
     }
+    public void onClick(View v) {
+        Object dataTransfer[] = new Object[2];
+        GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
+
+        switch (v.getId()) {
+            case R.id.B_gas_station:
+                mMap.clear();
+
+                String petrolPump = "hospital";
+
+                String url = getUrl(latitude, longitude, petrolPump);
+                dataTransfer[0] = mMap;
+                dataTransfer[1] = url;
+
+                getNearbyPlacesData.execute(dataTransfer);
+                Toast.makeText(this, "Showing nearby petrol pump", Toast.LENGTH_SHORT).show();
+                break;
+        }
+    }
+
+    private String getUrl(double latitude , double longitude , String nearbyPlace)
+    {
+
+        StringBuilder googlePlaceUrl = new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        googlePlaceUrl.append("location="+latitude+","+longitude);
+        googlePlaceUrl.append("&radius="+PROXIMITY_RADIUS);
+        googlePlaceUrl.append("&type="+nearbyPlace);
+        googlePlaceUrl.append("&sensor=true");
+        googlePlaceUrl.append("&key="+"AIzaSyDYg15IHg1OpWLw7DvJum6XK-n6sR9O-fA");
+
+        Log.d(TAG, "url = "+googlePlaceUrl.toString());
+
+        return googlePlaceUrl.toString();
+    }
+
 
     public void initMap() {
         Log.d(TAG, "initMap: initializing map");
