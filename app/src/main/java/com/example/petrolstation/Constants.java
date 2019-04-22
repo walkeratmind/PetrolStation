@@ -9,4 +9,6 @@ public class Constants {
 
     public static final int REQUEST_CHECK_SETTINGS = 100;
 
+    private static final int PLACE_PICKER_REQUEST = 1;
+
 }

@@ -13,16 +13,26 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.arlib.floatingsearchview.FloatingSearchView;
+import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
+import com.example.petrolstation.adapter.PlaceAutoCompleteAdapter;
+import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
@@ -83,16 +93,30 @@ public class MapsActivity extends FragmentActivity implements
 
     int PROXIMITY_RADIUS = 10000;
 
-    private LatLngBounds.Builder mBounds = new LatLngBounds.Builder();
+    private LatLngBounds mBounds;
+    private static final LatLngBounds LAT_LNG_BOUNDS = new LatLngBounds(
+            new LatLng(-40, -168), new LatLng(71, 136));
     double latitude;
     double longitude;
+
+    //models
+    private PlaceInfo placeInfo;
 
     private GeoDataClient mGeoDataClient;
     private PlaceDetectionClient mPlaceDetectionClient;
 
-    private BottomNavigationView mBottomNavigationView;
 
-    private SearchView mSearchView;
+
+    private PlaceAutoCompleteAdapter mPlaceAutoCompleteAdapter;
+
+    // widgets
+    private ImageView mGps, mInfo, mPlacePicker;
+    private BottomNavigationView mBottomNavigationView;
+    private FloatingSearchView mSearchView;
+
+    View mapView;
+
+//    private AutoCompleteTextView mSearchView;
 
 
     //adding marker if long clicked on a map
@@ -151,7 +175,6 @@ public class MapsActivity extends FragmentActivity implements
                 case R.id.navigation_setting:
                     return true;
 
-
             }
             return false;
         }
@@ -164,6 +187,14 @@ public class MapsActivity extends FragmentActivity implements
 
         mBottomNavigationView = findViewById(R.id.bottom_navigation_bar);
         mBottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
+        initializeSearchView();
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().
+                findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
+        mapView = mapFragment.getView();
 
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             getLocationPermission();
@@ -181,9 +212,36 @@ public class MapsActivity extends FragmentActivity implements
         // Construct a FusedLocationProviderClient.
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
-
 //        mLocationSource = new LongPressLocationSource();
-        initMap();
+    }
+
+    private void initializeSearchView() {
+        //for Search View and side Navigation
+        mSearchView = findViewById(R.id.search_view_bar);
+//        mSearchView = findViewById(R.id.input_search);
+
+        final DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+        NavigationView navigationView = findViewById(R.id.side_navigation_view);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout,
+                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+
+        drawerLayout.addDrawerListener(toggle);
+
+
+        mSearchView.setOnLeftMenuClickListener(new FloatingSearchView.OnLeftMenuClickListener() {
+            @Override
+            public void onMenuOpened() {
+                mSearchView.attachNavigationDrawerToMenuButton(drawerLayout);
+
+            }
+
+            @Override
+            public void onMenuClosed() {
+                mSearchView.detachNavigationDrawerFromMenuButton(drawerLayout);
+
+            }
+        });
     }
 
 
@@ -191,7 +249,6 @@ public class MapsActivity extends FragmentActivity implements
     public void onMapReady(GoogleMap googleMap) {
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
-
 
 //        locationRequest = LocationRequest.create();
 //        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -202,17 +259,15 @@ public class MapsActivity extends FragmentActivity implements
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
-            getDeviceLocation();
-            buildGoogleApiClient();
-
-            // Turn on the My Location layer and the related control on the map.
-            updateLocationUI();
-
             // Get the current location of the device and set the position of the map.
             getDeviceLocation();
 
-            mMap.setMyLocationEnabled(true);
+            init();
+
         }
+//        mMap.setMyLocationEnabled(true);
+
+
 
 
 //        Location location = mMap.getMyLocation();
@@ -221,6 +276,30 @@ public class MapsActivity extends FragmentActivity implements
 
     }
 
+    private void init() {
+        Log.d(TAG, "init: Initializing on Map Ready");
+
+        buildGoogleApiClient();
+
+        // Turn on the My Location layer and the related control on the map.
+        updateLocationUI();
+
+        mSearchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
+            @Override
+            public void onSearchTextChanged(String oldQuery, String newQuery) {
+                //get suggestion based on query
+
+                //passing  them on search view
+                List<? extends SearchSuggestion> newSuggestions = null;
+
+//                mSearchView.swapSuggestions(newSuggestions);
+            }
+        });
+
+        mPlaceAutoCompleteAdapter = new PlaceAutoCompleteAdapter(this, mGoogleApiClient,
+                LAT_LNG_BOUNDS, null);
+
+    }
 
     private void updateLocationUI() {
         if (mMap == null) {
@@ -229,6 +308,9 @@ public class MapsActivity extends FragmentActivity implements
         try {
             if (mLocationPermissionGranted) {
                 mMap.setMyLocationEnabled(true);
+
+                //change the position if location bottom is present
+                changeLocationBottomPosition();
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
             } else {
                 mMap.setMyLocationEnabled(false);
@@ -238,6 +320,17 @@ public class MapsActivity extends FragmentActivity implements
             }
         } catch (SecurityException e) {
             Log.e("Exception: %s", e.getMessage());
+        }
+    }
+
+    private void changeLocationBottomPosition() {
+        if (mapView != null) {
+            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
+            RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
+// position on right bottom
+            rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
+            rlp.setMargins(0, 150, 20, 0);
         }
     }
 
@@ -275,7 +368,6 @@ public class MapsActivity extends FragmentActivity implements
         return googlePlaceUrl.toString();
     }
 
-
     public void initMap() {
         Log.d(TAG, "initMap: initializing map");
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().
@@ -296,7 +388,6 @@ public class MapsActivity extends FragmentActivity implements
                     PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
     }
-
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
