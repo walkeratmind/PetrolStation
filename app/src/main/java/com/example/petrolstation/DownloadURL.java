@@ -40,10 +40,13 @@ public class DownloadURL {
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            inputStream.close();
+            if (inputStream != null) {
+                inputStream.close();
+            }
             httpURLConnection.disconnect();
 
         }
+        Log.d("Download URL", "data: " + data);
         return data;
     }
 

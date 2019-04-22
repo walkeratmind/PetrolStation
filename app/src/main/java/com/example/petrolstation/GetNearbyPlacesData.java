@@ -1,6 +1,7 @@
 package com.example.petrolstation;
 
 import android.os.AsyncTask;
+import android.support.design.widget.TabLayout;
 import android.util.Log;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -52,6 +53,7 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
     private void showNearbyPlaces(List<HashMap<String, String>> nearbyPlaceList) {
         for(int i = 0; i < nearbyPlaceList.size(); i++)
         {
+            Log.d(TAG," Nearby Places: " + nearbyPlaceList.get(i));
             MarkerOptions markerOptions = new MarkerOptions();
             HashMap<String, String> googlePlace = nearbyPlaceList.get(i);
 
