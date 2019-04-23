@@ -1,19 +1,26 @@
 package com.example.petrolstation;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.design.widget.TabLayout;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.example.petrolstation.utils.Utils;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+
+import static com.example.petrolstation.Constants.DEFAULT_ZOOM;
 
 public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
 
@@ -46,8 +53,10 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
         DataParser parser = new DataParser();
         nearbyPlaceList = parser.parse(s);
         Log.d(TAG,"called parse method");
-        showNearbyPlaces(nearbyPlaceList);
-
+//        showNearbyPlaces(nearbyPlaceList);
+        if (nearbyPlaceList != null) {
+            showNearbyPlaces(nearbyPlaceList);
+        }
     }
 
     private void showNearbyPlaces(List<HashMap<String, String>> nearbyPlaceList) {
@@ -69,7 +78,10 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
 
             mMap.addMarker(markerOptions);
             mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-            mMap.animateCamera(CameraUpdateFactory.zoomTo(10));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
+
+//            Utils.moveCamera(mMap, latLng, DEFAULT_ZOOM);
         }
     }
+
 }

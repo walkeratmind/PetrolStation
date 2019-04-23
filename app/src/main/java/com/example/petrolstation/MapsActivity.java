@@ -1,15 +1,21 @@
 package com.example.petrolstation;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
+import android.nfc.Tag;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -20,20 +26,26 @@ import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.widget.LinearLayoutManager;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
-import com.example.petrolstation.adapter.PlaceAutoCompleteAdapter;
+import com.example.petrolstation.adapter.CustomInfoWindowAdapter;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Result;
@@ -45,36 +57,58 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
-import com.google.android.gms.location.places.GeoDataClient;
-import com.google.android.gms.location.places.PlaceDetectionClient;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.internal.IGoogleMapDelegate;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.net.PlacesClient;
+import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
+import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.maps.DirectionsApi;
+import com.google.maps.DirectionsApiRequest;
+import com.google.maps.GeoApiContext;
+import com.google.maps.errors.ApiException;
+import com.google.maps.internal.PolylineEncoding;
+import com.google.maps.model.DirectionsResult;
+import com.google.maps.model.DirectionsRoute;
+import com.google.maps.model.TravelMode;
+import com.google.maps.model.Unit;
 
 
+import java.io.IOException;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static com.example.petrolstation.Constants.BROWSER_KEY;
 import static com.example.petrolstation.Constants.DEFAULT_ZOOM;
 import static com.example.petrolstation.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
 import static com.example.petrolstation.Constants.REQUEST_CHECK_SETTINGS;
+import static com.example.petrolstation.Constants.REQUEST_PLACE_PICKER;
+import static com.example.petrolstation.Constants.SERVER_API_KEY;
 
 public class MapsActivity extends FragmentActivity implements
         OnMapReadyCallback,
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener,
-        ResultCallback {
+        ResultCallback,
+        GoogleMap.OnInfoWindowClickListener {
 
     private static final String TAG = "Maps Activity";
 
@@ -99,20 +133,44 @@ public class MapsActivity extends FragmentActivity implements
     double latitude;
     double longitude;
 
+    private Location mClientLocation;
+
     //models
     private PlaceInfo placeInfo;
 
-    private GeoDataClient mGeoDataClient;
-    private PlaceDetectionClient mPlaceDetectionClient;
+    //    private GeoDataClient mGeoDataClient;
+//    private PlaceDetectionClient mPlaceDetectionClient;
+    private Places mPlaces;
+
+    //for direction and routes
+    private GeoApiContext geoApiContext = null;
+
+    // for polylines
+    private Handler mHandler = new Handler();
+    private Runnable mRunnable;
+    private static final int LOCATION_UPDATE_INTERVAL = 3000;
+
+    private void startUserLocationsRunnable() {
+        Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
+        mHandler.postDelayed(mRunnable = new Runnable() {
+            @Override
+            public void run() {
+                getDeviceLocation();
+                mHandler.postDelayed(mRunnable, LOCATION_UPDATE_INTERVAL);
+            }
+        }, LOCATION_UPDATE_INTERVAL);
+    }
 
 
+    private void stopLocationUpdates() {
+        mHandler.removeCallbacks(mRunnable);
+    }
 
-    private PlaceAutoCompleteAdapter mPlaceAutoCompleteAdapter;
 
     // widgets
     private ImageView mGps, mInfo, mPlacePicker;
     private BottomNavigationView mBottomNavigationView;
-    private FloatingSearchView mSearchView;
+//    private FloatingSearchView mSearchView;
 
     View mapView;
 
@@ -173,77 +231,13 @@ public class MapsActivity extends FragmentActivity implements
                     return true;
 
                 case R.id.navigation_setting:
+                    checkOut(mapView);
                     return true;
 
             }
             return false;
         }
     };
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_maps);
-
-        mBottomNavigationView = findViewById(R.id.bottom_navigation_bar);
-        mBottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
-        initializeSearchView();
-
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().
-                findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        mapView = mapFragment.getView();
-
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
-            getLocationPermission();
-        } else {
-            //permission is granted while app is installed
-            mLocationPermissionGranted = true;
-        }
-
-        // Construct a GeoDataClient.
-        mGeoDataClient = Places.getGeoDataClient(this, null);
-
-        // Construct a PlaceDetectionClient.
-        mPlaceDetectionClient = Places.getPlaceDetectionClient(this, null);
-
-        // Construct a FusedLocationProviderClient.
-        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
-
-//        mLocationSource = new LongPressLocationSource();
-    }
-
-    private void initializeSearchView() {
-        //for Search View and side Navigation
-        mSearchView = findViewById(R.id.search_view_bar);
-//        mSearchView = findViewById(R.id.input_search);
-
-        final DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
-        NavigationView navigationView = findViewById(R.id.side_navigation_view);
-
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout,
-                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-
-        drawerLayout.addDrawerListener(toggle);
-
-
-        mSearchView.setOnLeftMenuClickListener(new FloatingSearchView.OnLeftMenuClickListener() {
-            @Override
-            public void onMenuOpened() {
-                mSearchView.attachNavigationDrawerToMenuButton(drawerLayout);
-
-            }
-
-            @Override
-            public void onMenuClosed() {
-                mSearchView.detachNavigationDrawerFromMenuButton(drawerLayout);
-
-            }
-        });
-    }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -265,9 +259,17 @@ public class MapsActivity extends FragmentActivity implements
             init();
 
         }
+
+        if (mClientLocation != null) {
+
+            LatLng current = new LatLng(mClientLocation.getLatitude(), mClientLocation.getLongitude());
+            mMap.addMarker(new MarkerOptions().position(current)
+                    .title("Marker in current place"));
+        }
+        LatLng nepal = new LatLng(27.7172, 85.3240);
+        mMap.addMarker(new MarkerOptions().position(nepal).title("Kathmandu"));
+
 //        mMap.setMyLocationEnabled(true);
-
-
 
 
 //        Location location = mMap.getMyLocation();
@@ -276,30 +278,269 @@ public class MapsActivity extends FragmentActivity implements
 
     }
 
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_maps);
+
+        mBottomNavigationView = findViewById(R.id.bottom_navigation_bar);
+        mBottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().
+                findFragmentById(R.id.map);
+        mapFragment.getMapAsync(this);
+
+        mapView = mapFragment.getView();
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
+            getLocationPermission();
+        } else {
+            //permission is granted while app is installed
+            mLocationPermissionGranted = true;
+        }
+
+        // Construct a GeoDataClient.
+//        mGeoDataClient = Places.getGeoDataClient(this, null);
+//
+//        // Construct a PlaceDetectionClient.
+//        mPlaceDetectionClient = Places.getPlaceDetectionClient(this, null);
+
+        // Construct a FusedLocationProviderClient.
+        mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+        showAutoCompleteSearch();
+
+//        mLocationSource = new LongPressLocationSource();
+    }
+
+    private void showAutoCompleteSearch() {
+
+// Initialize Places.
+        if (!Places.isInitialized()) {
+            Places.initialize(getApplicationContext(), SERVER_API_KEY);
+        }
+// Create a new Places client instance.
+        PlacesClient placesClient = com.google.android.libraries.places.api.Places.createClient(this);
+
+        AutocompleteSupportFragment autocompleteFragment = (AutocompleteSupportFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.place_autocomplete_fragment);
+
+        autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME,
+                Place.Field.ADDRESS,Place.Field.ADDRESS_COMPONENTS, Place.Field.PHOTO_METADATAS,
+                Place.Field.PLUS_CODE, Place.Field.PRICE_LEVEL, Place.Field.USER_RATINGS_TOTAL,
+                Place.Field.TYPES, Place.Field.VIEWPORT,Place.Field.LAT_LNG));
+
+        autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
+            @Override
+            public void onPlaceSelected(@NonNull Place place) {
+                // TODO: Get info about the selected place.
+                Log.i(TAG, "Place: " + place.getName() + ", " + place.getId());
+
+                // Adding Marker and moving camera to that place
+                mMap.clear();
+                mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(place.getLatLng()));
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 12.0f));
+            }
+
+            @Override
+            public void onError(@NonNull Status status) {
+                Log.i(TAG, "An error occurred: " + status);
+
+            }
+        });
+    }
+
+    private void initDirectionApi() {
+        if (geoApiContext == null) {
+            geoApiContext = new GeoApiContext.Builder().apiKey(getString(R.string.browser_key))
+                    .disableRetries()
+                    .readTimeout(1, TimeUnit.SECONDS)
+                    .writeTimeout(1, TimeUnit.SECONDS)
+                    .build();
+
+        }
+    }
+
+
+    private void calculateDirections(Marker marker) {
+        Log.d(TAG, "calculateDirections: calculating directions.");
+
+        com.google.maps.model.LatLng destination = new com.google.maps.model.LatLng(
+                marker.getPosition().latitude,
+                marker.getPosition().longitude
+        );
+        DirectionsApiRequest directions = new DirectionsApiRequest(geoApiContext);
+
+        directions.alternatives(true);
+
+        Toast.makeText(this, "Client Location: " + mClientLocation, Toast.LENGTH_SHORT).show();
+
+        directions.origin(
+                new com.google.maps.model.LatLng(
+                        mClientLocation.getLatitude(),
+                        mClientLocation.getLongitude()
+                )
+        );
+        Log.d(TAG, "calculateDirections: destination: " + destination.toString());
+
+        String origin = "bhaktapur";
+        String dest = "Kathmandu";
+//        try {
+//            DirectionsResult result = DirectionsApi.newRequest(geoApiContext)
+//                    .mode(TravelMode.DRIVING).origin(origin)
+//                    .destination(dest).departureTime(Instant.now())
+//                    .await();
+//
+//            Log.d(TAG, "calculateDirections: routes: " + result.routes[0].toString());
+//            Log.d(TAG, "calculateDirections: duration: " + result.routes[0].legs[0].duration);
+//            Log.d(TAG, "calculateDirections: distance: " + result.routes[0].legs[0].distance);
+//            Log.d(TAG, "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString());
+//
+//            addPolylinesToMap(result);
+//
+//        } catch (ApiException e) {
+//            e.printStackTrace();
+//            Log.d(TAG, "ApiException: " + e);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        directions.destination(destination).mode(TravelMode.DRIVING).setCallback(new com.google.maps.PendingResult.Callback<DirectionsResult>() {
+            @Override
+            public void onResult(DirectionsResult result) {
+                Log.d(TAG, "calculateDirections: routes: " + result.routes[0].toString());
+                Log.d(TAG, "calculateDirections: duration: " + result.routes[0].legs[0].duration);
+                Log.d(TAG, "calculateDirections: distance: " + result.routes[0].legs[0].distance);
+                Log.d(TAG, "calculateDirections: geocodedWayPoints: " + result.geocodedWaypoints[0].toString());
+
+                Log.d(TAG, "onResult: successfully retrieved directions.");
+                addPolylinesToMap(result);
+            }
+
+            @Override
+            public void onFailure(Throwable e) {
+                Log.e(TAG, "calculateDirections: Failed to get directions: " + e.getMessage());
+
+            }
+        });
+    }
+
+//    private void addPolyline(DirectionsResult results, GoogleMap mMap) {
+//        List<LatLng> decodedPath = PolyUtil.decode(results.routes[0].overviewPolyline.getEncodedPath());
+//        mMap.addPolyline(new PolylineOptions().addAll(decodedPath));
+//    }
+
+//    private void initializeSearchView() {
+//        //for Search View and side Navigation
+//        mSearchView = findViewById(R.id.search_view_bar);
+////        mSearchView = findViewById(R.id.input_search);
+//
+//        final DrawerLayout drawerLayout = findViewById(R.id.drawer_layout);
+//        NavigationView navigationView = findViewById(R.id.side_navigation_view);
+//
+//        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawerLayout,
+//                R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+//
+//        drawerLayout.addDrawerListener(toggle);
+//
+//
+//        mSearchView.setOnLeftMenuClickListener(new FloatingSearchView.OnLeftMenuClickListener() {
+//            @Override
+//            public void onMenuOpened() {
+//                mSearchView.attachNavigationDrawerToMenuButton(drawerLayout);
+//
+//            }
+//
+//            @Override
+//            public void onMenuClosed() {
+//                mSearchView.detachNavigationDrawerFromMenuButton(drawerLayout);
+//
+//            }
+//        });
+//    }
+
+
     private void init() {
         Log.d(TAG, "init: Initializing on Map Ready");
 
         buildGoogleApiClient();
 
+        initDirectionApi();
+
         // Turn on the My Location layer and the related control on the map.
         updateLocationUI();
 
-        mSearchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
+        mMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
-            public void onSearchTextChanged(String oldQuery, String newQuery) {
-                //get suggestion based on query
+            public void onInfoWindowClick(final Marker marker) {
+                Toast.makeText(MapsActivity.this, "Clicked in Info window", Toast.LENGTH_SHORT).show();
 
-                //passing  them on search view
-                List<? extends SearchSuggestion> newSuggestions = null;
+                if (marker.getSnippet() != null && marker.getSnippet().equals("You are here")) {
+                    marker.hideInfoWindow();
+                } else {
 
-//                mSearchView.swapSuggestions(newSuggestions);
+                    final AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                    builder.setTitle("Route to this")
+                            .setMessage(marker.getSnippet())
+                            .setCancelable(true)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                                    calculateDirections(marker);
+                                    dialog.dismiss();
+                                }
+                            })
+                            .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                                    dialog.cancel();
+                                }
+                            });
+                    final AlertDialog alertDialog = builder.create();
+                    alertDialog.show();
+                }
             }
         });
 
-        mPlaceAutoCompleteAdapter = new PlaceAutoCompleteAdapter(this, mGoogleApiClient,
-                LAT_LNG_BOUNDS, null);
+
+//        mSearchView.setOnQueryChangeListener(new FloatingSearchView.OnQueryChangeListener() {
+//            @Override
+//            public void onSearchTextChanged(String oldQuery, String newQuery) {
+//                //get suggestion based on query
+//
+//                //passing  them on search view
+//                List<? extends SearchSuggestion> newSuggestions = null;
+//
+////                mSearchView.swapSuggestions(newSuggestions);
+//            }
+//        });
+
 
     }
+
+    public void checkOut(View view) {
+//        PlacePicker.IntentBuilder intentBuilder = new PlacePicker.IntentBuilder();
+//        try {
+//            Intent intent = intentBuilder.build(this);
+//            startActivityForResult(intent, REQUEST_PLACE_PICKER);
+//        } catch (GooglePlayServicesRepairableException e) {
+//            e.printStackTrace();
+//        } catch (GooglePlayServicesNotAvailableException e) {
+//            e.printStackTrace();
+//            Toast.makeText(this, "Please install Google Play Services!", Toast.LENGTH_LONG).show();
+//        }
+
+
+    }
+
+    public void setupSuggestionSection() {
+        List<? extends SearchSuggestion> mSuggestionList = null;
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext(),
+                LinearLayoutManager.VERTICAL, true);
+
+    }
+
 
     private void updateLocationUI() {
         if (mMap == null) {
@@ -312,6 +553,7 @@ public class MapsActivity extends FragmentActivity implements
                 //change the position if location bottom is present
                 changeLocationBottomPosition();
                 mMap.getUiSettings().setMyLocationButtonEnabled(true);
+
             } else {
                 mMap.setMyLocationEnabled(false);
                 mMap.getUiSettings().setMyLocationButtonEnabled(false);
@@ -338,20 +580,6 @@ public class MapsActivity extends FragmentActivity implements
         Object dataTransfer[] = new Object[2];
         GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
 
-//        switch (v.getId()) {
-//            case R.id.B_gas_station:
-//                mMap.clear();
-//
-//                String petrolPump = "gas_station";
-//
-//                String url = getUrl(latitude, longitude, petrolPump);
-//                dataTransfer[0] = mMap;
-//                dataTransfer[1] = url;
-//
-//                getNearbyPlacesData.execute(dataTransfer);
-//                Toast.makeText(this, "Showing nearby petrol pump", Toast.LENGTH_SHORT).show();
-//                break;
-//        }
     }
 
     private String getUrl(double latitude, double longitude, String nearbyPlace) {
@@ -361,7 +589,7 @@ public class MapsActivity extends FragmentActivity implements
         googlePlaceUrl.append("&radius=" + PROXIMITY_RADIUS);
         googlePlaceUrl.append("&type=" + nearbyPlace);
         googlePlaceUrl.append("&sensor=true");
-        googlePlaceUrl.append("&key=" + "AIzaSyDYg15IHg1OpWLw7DvJum6XK-n6sR9O-fA");
+        googlePlaceUrl.append("&key=" + BROWSER_KEY);
 
         Log.d(TAG, "url = " + googlePlaceUrl.toString());
 
@@ -425,7 +653,9 @@ public class MapsActivity extends FragmentActivity implements
                             Location currentLocation = (Location) task.getResult();
                             if (currentLocation != null) {
                                 moveCamera(new LatLng(currentLocation.getLatitude(), currentLocation.getLongitude()),
-                                        50);
+                                        DEFAULT_ZOOM);
+                                mClientLocation = currentLocation;
+                                Log.d(TAG, "getDevice Location: " + mClientLocation);
                                 latitude = currentLocation.getLatitude();
                                 longitude = currentLocation.getLongitude();
                             } else {
@@ -527,6 +757,20 @@ public class MapsActivity extends FragmentActivity implements
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+        if (mLocationPermissionGranted) {
+            mFusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            // Got last known location. In some rare situations this can be null.
+                            if (location != null) {
+                                // Logic to handle location object
+                                mClientLocation = location;
+                            }
+                        }
+                    });
+            Log.d(TAG, "On Connected Current Location: " + mClientLocation);
+        }
     }
 
     @Override
@@ -558,7 +802,7 @@ public class MapsActivity extends FragmentActivity implements
         markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
         currentLocationMarker = mMap.addMarker(markerOptions);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.animateCamera(CameraUpdateFactory.zoomBy(10));
+        mMap.animateCamera(CameraUpdateFactory.zoomBy(DEFAULT_ZOOM));
 
         if (mGoogleApiClient != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -611,5 +855,73 @@ public class MapsActivity extends FragmentActivity implements
                 Toast.makeText(getApplicationContext(), "GPS is not enabled", Toast.LENGTH_LONG).show();
             }
         }
+
+//        if (requestCode == REQUEST_PLACE_PICKER) {
+//            if (resultCode == Activity.RESULT_OK) {
+//                Place place = PlacePicker.getPlace(data, this);
+//            } else if (resultCode == PlacePicker.RESULT_ERROR) {
+//                Toast.makeText(this, "Places API failure! Check that the API is enabled for your key",
+//                        Toast.LENGTH_LONG).show();
+//            }
+//        } else {
+//            super.onActivityResult(requestCode, resultCode, data);
+//        }
+    }
+
+
+    @Override
+    public void onInfoWindowClick(final Marker marker) {
+        if (marker.getSnippet().equals("You are here")) {
+            marker.hideInfoWindow();
+        } else {
+
+            final AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+            builder.setMessage(marker.getSnippet())
+                    .setCancelable(true)
+                    .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                        public void onClick(@SuppressWarnings("unused") final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                            calculateDirections(marker);
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                        public void onClick(final DialogInterface dialog, @SuppressWarnings("unused") final int id) {
+                            dialog.cancel();
+                        }
+                    });
+            final AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+        }
+    }
+
+    private void addPolylinesToMap(final DirectionsResult result) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                Log.d(TAG, "run: result routes: " + result.routes.length);
+
+                for (DirectionsRoute route : result.routes) {
+                    Log.d(TAG, "run: leg: " + route.legs[0].toString());
+                    List<com.google.maps.model.LatLng> decodedPath = PolylineEncoding.decode(route.overviewPolyline.getEncodedPath());
+
+                    List<LatLng> newDecodedPath = new ArrayList<>();
+
+                    // This loops through all the LatLng coordinates of ONE polyline.
+                    for (com.google.maps.model.LatLng latLng : decodedPath) {
+
+//                        Log.d(TAG, "run: latlng: " + latLng.toString());
+
+                        newDecodedPath.add(new LatLng(
+                                latLng.lat,
+                                latLng.lng
+                        ));
+                    }
+                    Polyline polyline = mMap.addPolyline(new PolylineOptions().addAll(newDecodedPath));
+                    polyline.setColor(ContextCompat.getColor(getApplicationContext(), R.color.darkGrey));
+                    polyline.setClickable(true);
+
+                }
+            }
+        });
     }
 }

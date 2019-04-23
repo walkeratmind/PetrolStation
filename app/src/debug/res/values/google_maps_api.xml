@@ -20,6 +20,17 @@
     Once you have your key (it starts with "AIza"), replace the "google_maps_key"
     string in this file.
     -->
+    <!--google console petrol station-->
+    <!--for google petrol station-->
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyCJP6_soVTeMM8z-tkhg-au0HmHvvRv0Uw</string>
     <string name="browser_key">AIzaSyDYg15IHg1OpWLw7DvJum6XK-n6sR9O-fA</string>
+
+    <!--for gas station in console-->
+    <!--<string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyAAocO-vVN990UZAny_-Ju_WJPIUGQHuBo</string>-->
+    <!--<string name="browser_key">AIzaSyBRK-YISY8DreApzvLulI4MpC3BR1yKb-4</string>-->
+
+    <!--USING FUEL FINDER-->
+
+    <!--<string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyCAMkH2fOR-Cz7Ohhe1UAbima9oLdwahiI</string>-->
+    <!--<string name="browser_key">AIzaSyCBJyZvZMqgtvSHNSWqu9oIhBg7xNj4GgU</string>-->
 </resources>

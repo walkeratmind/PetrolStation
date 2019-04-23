@@ -73,6 +73,10 @@ public class DataParser {
         JSONArray jsonArray = null;
         JSONObject jsonObject;
 
+        if (jsonData == null) {
+            return null;
+        }
+
         Log.d("json data", jsonData);
 
         try {
