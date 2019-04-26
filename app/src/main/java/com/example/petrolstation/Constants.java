@@ -16,9 +16,9 @@ public class Constants {
 //    public static final String BROWSER_KEY = "AIzaSyBRK-YISY8DreApzvLulI4MpC3BR1yKb-4";
 //    public static final String SERVER_API_KEY = "AIzaSyDd1HjJ0vSvmuyndZXfg3TSP0v4hMi5vAA";
 
-    // for petrol station
-    public static final String BROWSER_KEY = "AIzaSyDYg15IHg1OpWLw7DvJum6XK-n6sR9O-fA";
-    public static final String SERVER_API_KEY = "AIzaSyBelL7RGQ205NtBiG1WJ2KfVqBgsNAcaqM";
+    // for petrol station KEYs by arbind
+    public static final String BROWSER_KEY = "AIzaSyBsJyAKr9zTWqlAiLwdmI-u7vIqnu-_hg0";
+    public static final String SERVER_API_KEY = "AIzaSyDYTQAQeHD6xuxxuKV36DLAczDw2IzRKWk";
 
     // USING FUEL FINDER
 //    public static final String BROWSER_KEY = "AIzaSyCBJyZvZMqgtvSHNSWqu9oIhBg7xNj4GgU";

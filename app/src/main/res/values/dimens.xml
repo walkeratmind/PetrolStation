@@ -7,4 +7,10 @@
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="nav_header_vertical_spacing">8dp</dimen>
     <dimen name="search_view_margin_regular">8dp</dimen>
+    <dimen name="margin_regular">8dp</dimen>
+    <dimen name="elevation_regular">6dp</dimen>
+    <dimen name="radius_regular">6dp</dimen>
+    <dimen name="padding_large">16dp</dimen>
+    <dimen name="padding_regular">8dp</dimen>
+
 </resources>
