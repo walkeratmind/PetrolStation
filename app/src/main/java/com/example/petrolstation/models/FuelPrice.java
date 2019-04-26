@@ -1,8 +1,7 @@
 package com.example.petrolstation.models;
 
-import java.util.Date;
-
 public class FuelPrice {
+    private int id;
     private String effectiveDate;
     private String effectiveTime;
     private String petrolPrice;
@@ -10,11 +9,38 @@ public class FuelPrice {
     private String kerosenePrice;
     private String lpgPrice;
     private String atfDp;
-    private String arfDf;
+    private String atfDf;
 
-    public FuelPrice(String effectiveDate, String effectiveTime, String petrolPrice,
-                     String dieselPrice, String kerosenePrice, String lpgPrice,
-                     String atfDp, String arfDf) {
+    public static final String TABLE_NAME = "fuelPrice";
+    public static final String COLUMN_ID = "effectiveDate";
+    public static final String COLUMN_EFFECTIVE_DATE = "effectiveDate";
+    public static final String COLUMN_EFFECTIVE_TIME = "effectiveTime";
+    public static final String COLUMN_PETROL_PRICE = "petrolPrice";
+    public static final String COLUMN_DIESEL_PRICE = "dieselPrice";
+    public static final String COLUMN_KEROSENE_PRICE = "kerosenePrice";
+    public static final String COLUMN_LPG_PRICE = "lpgPrice";
+    public static final String COLUMN_ATFDP_PRICE = "atfDP";
+    public static final String COLUMN_ATFDF_PRICE = "atfDf";
+
+
+    // SQL Query for table creation
+    public static final String sqlQuery = "CREATE TABLE " + TABLE_NAME + "(\n" +
+            "\t`id`\tINTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,\n" +
+            "\t`effectiveDate`\tTEXT,\n" +
+            "\t`effectiveTime`\tTEXT,\n" +
+            "\t`petrolPrice`\tTEXT,\n" +
+            "\t`dieselPrice`\tTEXT,\n" +
+            "\t`kerosenePrice`\tTEXT,\n" +
+            "\t`lpgPrice`\tTEXT,\n" +
+            "\t`atfDP`\tTEXT,\n" +
+            "\t`atfDf`\tTEXT,\n" +
+            "\t`timestamp`\tDATETIME DEFAULT CURRENT_TIMESTAMP\n" +
+            ");";
+
+    public FuelPrice(int id, String effectiveDate, String effectiveTime,
+                     String petrolPrice, String dieselPrice,
+                     String kerosenePrice, String lpgPrice, String atfDp, String atfDf) {
+        this.id = id;
         this.effectiveDate = effectiveDate;
         this.effectiveTime = effectiveTime;
         this.petrolPrice = petrolPrice;
@@ -22,7 +48,28 @@ public class FuelPrice {
         this.kerosenePrice = kerosenePrice;
         this.lpgPrice = lpgPrice;
         this.atfDp = atfDp;
-        this.arfDf = arfDf;
+        this.atfDf = atfDf;
+    }
+
+    public FuelPrice(String effectiveDate, String effectiveTime, String petrolPrice,
+                     String dieselPrice, String kerosenePrice, String lpgPrice,
+                     String atfDp, String atfDf) {
+        this.effectiveDate = effectiveDate;
+        this.effectiveTime = effectiveTime;
+        this.petrolPrice = petrolPrice;
+        this.dieselPrice = dieselPrice;
+        this.kerosenePrice = kerosenePrice;
+        this.lpgPrice = lpgPrice;
+        this.atfDp = atfDp;
+        this.atfDf = atfDf;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getEffectiveDate() {
@@ -81,11 +128,11 @@ public class FuelPrice {
         this.atfDp = atfDp;
     }
 
-    public String getArfDf() {
-        return arfDf;
+    public String getAtfDf() {
+        return atfDf;
     }
 
-    public void setArfDf(String arfDf) {
-        this.arfDf = arfDf;
+    public void setAtfDf(String atfDf) {
+        this.atfDf = atfDf;
     }
 }

@@ -5,7 +5,31 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/coordinator_layout"
-    tools:context=".DetailsActivity">
+    tools:context=".DetailsActivity"
+    android:orientation="vertical">
+    
+    <LinearLayout
+        android:id="@+id/progress_bar"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+       >
+        <ProgressBar
+            android:id="@+id/progress_circular"
+            style="@style/Widget.AppCompat.Spinner"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+          />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading..."
+            android:layout_gravity="center"
+            style="@style/texStyle"/>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/body_content"

@@ -13,6 +13,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.example.petrolstation.R;
@@ -33,13 +35,17 @@ public class DetailsFragment extends Fragment {
 
     // URL of a website...
     String url = "http://nepaloil.com.np/retailprice";
-    // Connecting to website
     Document content;
     String body = "nothing";
+
+    // For transfering data to async task
+    Object dataTransfer[] = new Object[2];  //for transfering url and context
 
     private RecyclerView recyclerView;
 
     TextView textView;
+    ProgressBar progressBar;
+    LinearLayout progressLayout;
 
     // Create Empty Constructor
     public DetailsFragment() {}
@@ -51,6 +57,13 @@ public class DetailsFragment extends Fragment {
 
         textView = view.findViewById(R.id.body_content);
         recyclerView = view.findViewById(R.id.recycler_view);
+        progressBar  = view.findViewById(R.id.progress_circular);
+
+        progressLayout = view.findViewById(R.id.progress_bar);
+
+
+        dataTransfer[0] = getContext();
+        dataTransfer[1] = url;
 
         showPriceDetails();
         return view;
@@ -59,12 +72,16 @@ public class DetailsFragment extends Fragment {
 
     public void showPriceDetails() {
         if (Utils.isNetworkAvailable(getContext())) {
+
+//            progressLayout.setVisibility(View.VISIBLE);
             // RUN WEB SCARPING HERE >>>
             new GetFuelPrices(new ParserResponseInterface() {
                 @Override
                 public void onParsingDone(ArrayList<FuelPrice> fuelPriceArrayList) {
+//                    progressLayout.setVisibility(View.GONE);
                     if (fuelPriceArrayList != null) {
-                        textView.setText("Petrol Price: " + fuelPriceArrayList.get(0).getPetrolPrice());
+//                        textView.setText("Petrol Price: " + fuelPriceArrayList.get(0).getPetrolPrice());
+
 
                         //show values in recycler view if background task is finished
                         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getContext());
@@ -98,7 +115,7 @@ public class DetailsFragment extends Fragment {
                         textView.setText("Error while Web Scarping");
                     }
                 }
-            }).execute(url);
+            }).execute(dataTransfer);
 
         } else {
             Snackbar snackbar = Snackbar

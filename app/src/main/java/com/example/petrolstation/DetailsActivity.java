@@ -17,6 +17,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import com.example.petrolstation.adapter.FuelPriceViewAdapter;
+import com.example.petrolstation.database.DatabaseHelper;
 import com.example.petrolstation.listener.RecyclerTouchListener;
 import com.example.petrolstation.models.FuelPrice;
 import com.example.petrolstation.utils.Utils;
@@ -39,7 +40,7 @@ public class DetailsActivity extends AppCompatActivity {
 
     // URL of a website...
     String url = "http://nepaloil.com.np/retailprice";
-    // Connecting to website
+
     Document content;
     String body = "nothing";
 
@@ -57,6 +58,7 @@ public class DetailsActivity extends AppCompatActivity {
 
         // start the thread
 //        getPrice.start();
+
 
 //        fuelPriceList = null;
 
@@ -78,7 +80,7 @@ public class DetailsActivity extends AppCompatActivity {
                 @Override
                 public void onParsingDone(ArrayList<FuelPrice> fuelPriceArrayList) {
                     if (fuelPriceArrayList != null) {
-                        textView.setText("Petrol Price: " + fuelPriceArrayList.get(0).getPetrolPrice());
+//                        textView.setText("Petrol Price: " + fuelPriceArrayList.get(0).getPetrolPrice());
 
                         //show values in recycler view if background task is finished
                         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getApplicationContext());
