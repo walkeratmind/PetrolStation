@@ -12,5 +12,6 @@
     <dimen name="radius_regular">6dp</dimen>
     <dimen name="padding_large">16dp</dimen>
     <dimen name="padding_regular">8dp</dimen>
+    <dimen name="button_height">50dp</dimen>
 
 </resources>

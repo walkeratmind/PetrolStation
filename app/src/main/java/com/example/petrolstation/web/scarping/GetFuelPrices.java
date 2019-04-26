@@ -40,7 +40,7 @@ public class GetFuelPrices extends AsyncTask<String, Void, ArrayList<FuelPrice>>
         ArrayList<FuelPrice> fuelPriceArrayList = new ArrayList<>();
 
         try {
-            content = Jsoup.connect(url).timeout(10 * 1000).get();  //set timeout for 10s
+            content = Jsoup.connect(url).timeout(0).get();  //set timeout
 
             Log.d(TAG, "Jsoup Content: " + content);
 

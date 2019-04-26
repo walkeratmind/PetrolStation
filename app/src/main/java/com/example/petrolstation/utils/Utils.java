@@ -4,6 +4,8 @@ import android.app.Dialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.petrolstation.R;
@@ -44,6 +46,13 @@ public  class Utils {
         dieselPrice.setText(fuelPrice.getDieselPrice());
         kerosenePrice.setText(fuelPrice.getKerosenePrice());
         lpgPrice.setText(fuelPrice.getLpgPrice());
+
+        fuelPriceDialog.findViewById(R.id.close_btn).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                fuelPriceDialog.dismiss();
+            }
+        });
 
         fuelPriceDialog.show();
 

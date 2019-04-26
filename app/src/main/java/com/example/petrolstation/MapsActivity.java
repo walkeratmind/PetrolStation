@@ -21,8 +21,10 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -42,6 +44,7 @@ import android.widget.Toast;
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.example.petrolstation.adapter.CustomInfoWindowAdapter;
+import com.example.petrolstation.fragments.DetailsFragment;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -208,6 +211,7 @@ public class MapsActivity extends FragmentActivity implements
 
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
             Object dataTransfer[] = new Object[2];
@@ -231,7 +235,7 @@ public class MapsActivity extends FragmentActivity implements
                     return true;
 
                 case R.id.navigation_setting:
-                    checkOut(mapView);
+                    startActivity(new Intent(MapsActivity.this, DetailsFragment.class));
                     return true;
 
             }
@@ -243,11 +247,6 @@ public class MapsActivity extends FragmentActivity implements
     public void onMapReady(GoogleMap googleMap) {
         Log.d(TAG, "onMapReady: map is ready");
         mMap = googleMap;
-
-//        locationRequest = LocationRequest.create();
-//        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-//        locationRequest.setInterval(30 * 1000);
-//        locationRequest.setFastestInterval(5 * 1000);
 
         //User has previously accepted this permission
         if (ActivityCompat.checkSelfPermission(this,
@@ -269,15 +268,7 @@ public class MapsActivity extends FragmentActivity implements
         LatLng nepal = new LatLng(27.7172, 85.3240);
         mMap.addMarker(new MarkerOptions().position(nepal).title("Kathmandu"));
 
-//        mMap.setMyLocationEnabled(true);
-
-
-//        Location location = mMap.getMyLocation();
-//        latitude = location.getLatitude();
-//        longitude = location.getLongitude();
-
     }
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -292,6 +283,8 @@ public class MapsActivity extends FragmentActivity implements
         mapFragment.getMapAsync(this);
 
         mapView = mapFragment.getView();
+
+
 
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             getLocationPermission();
