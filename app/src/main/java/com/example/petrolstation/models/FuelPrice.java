@@ -12,7 +12,7 @@ public class FuelPrice {
     private String atfDf;
 
     public static final String TABLE_NAME = "fuelPrice";
-    public static final String COLUMN_ID = "effectiveDate";
+    public static final String COLUMN_ID = "id";
     public static final String COLUMN_EFFECTIVE_DATE = "effectiveDate";
     public static final String COLUMN_EFFECTIVE_TIME = "effectiveTime";
     public static final String COLUMN_PETROL_PRICE = "petrolPrice";

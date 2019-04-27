@@ -4,6 +4,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.support.design.widget.Snackbar;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -27,7 +28,7 @@ public  class Utils {
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
-    public static void FuelDetailDialog(Context context, FuelPrice fuelPrice) {
+    public static void showFuelDetailDialog(Context context, FuelPrice fuelPrice) {
         Dialog fuelPriceDialog = new Dialog(context);
         fuelPriceDialog.setContentView(R.layout.fuel_price_detail);
         fuelPriceDialog.setTitle("Price Details");
@@ -55,6 +56,5 @@ public  class Utils {
         });
 
         fuelPriceDialog.show();
-
     }
 }

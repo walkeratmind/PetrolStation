@@ -1,36 +1,25 @@
 package com.example.petrolstation;
 
-import android.content.Context;
 import android.graphics.Color;
-import android.os.AsyncTask;
-import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
 import com.example.petrolstation.adapter.FuelPriceViewAdapter;
-import com.example.petrolstation.database.DatabaseHelper;
 import com.example.petrolstation.listener.RecyclerTouchListener;
 import com.example.petrolstation.models.FuelPrice;
 import com.example.petrolstation.utils.Utils;
 import com.example.petrolstation.web.scarping.GetFuelPrices;
 import com.example.petrolstation.web.scarping.parser.ParserResponseInterface;
 
-import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
 import org.jsoup.nodes.Document;
 
-import org.jsoup.nodes.Element;
-
-import java.io.IOException;
 import java.util.ArrayList;
 
 
@@ -98,7 +87,7 @@ public class DetailsActivity extends AppCompatActivity {
                                         new RecyclerTouchListener.ClickListener() {
                                             @Override
                                             public void onClick(View view, int position) {
-                                                Utils.FuelDetailDialog(getApplicationContext(),
+                                                Utils.showFuelDetailDialog(getApplicationContext(),
                                                         fuelPriceArrayList.get(position));
                                             }
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.petrolstation.models.FuelPrice;
 
@@ -12,11 +13,15 @@ import java.util.ArrayList;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
 
+    private static final String TAG = DatabaseHelper.class.getSimpleName();
+
     // Database Version
     private static final int DATABASE_VERSION = 1;
 
     // Database Name
     private static final String DATABASE_NAME = "petrol_station_db";
+
+    private SQLiteDatabase mDatabase;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -28,6 +33,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         // CREATE Table fuelprice
         db.execSQL(FuelPrice.sqlQuery);
+        Log.d(TAG, "Created Table : " + FuelPrice.TABLE_NAME);
     }
 
     @Override
@@ -58,6 +64,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // close db connection
         db.close();
 
+        Log.d(TAG, "InsertedFuelDetail: " + fuelPrice.getEffectiveDate());
         return id;
     }
 
@@ -96,8 +103,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public ArrayList<FuelPrice> getAllFuelPriceDetail() {
         // Select All Query
-        String selectQuery = "SELECT  * FROM " + FuelPrice.TABLE_NAME + " ORDER BY " +
-                FuelPrice.COLUMN_ID + " DESC";
+//        String selectQuery = "SELECT  * FROM " + FuelPrice.TABLE_NAME + " ORDER BY " +
+//                FuelPrice.COLUMN_ID + " DESC";
+
+        String selectQuery = "SELECT  * FROM " + FuelPrice.TABLE_NAME ;
 
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.rawQuery(selectQuery, null);
@@ -132,6 +141,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         // delete all the record
         db.execSQL(truncateQuery);
 
+        Log.d(TAG, "cleanTable(): ");
         db.close();
 
     }
@@ -142,6 +152,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Cursor cursor = db.rawQuery(countQuery, null);
 
         int count = cursor.getCount();
+
+        Log.d(TAG, "getFuelPriceCount: " + count);
         cursor.close();
 
 
@@ -150,7 +162,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public boolean isFuelPriceDetailEmpty() {
-        return getFuelPriceCount() != 0? true : false;
+        // if fuel pricecount() == 0 return true else false
+        return getFuelPriceCount() != 0? false : true;
     }
 
+    public boolean isTableExists(String tableName, boolean openDb) {
+        if(openDb) {
+            if(mDatabase == null || !mDatabase.isOpen()) {
+                mDatabase = getReadableDatabase();
+            }
+
+            if(!mDatabase.isReadOnly()) {
+                mDatabase.close();
+                mDatabase = getReadableDatabase();
+            }
+        }
+
+        Cursor cursor = mDatabase.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = '"+tableName+"'", null);
+        if(cursor!=null) {
+            if(cursor.getCount()>0) {
+                cursor.close();
+                return true;
+            }
+            cursor.close();
+        }
+        return false;
+    }
 }

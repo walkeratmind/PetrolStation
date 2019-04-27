@@ -214,7 +214,7 @@ public class MapsActivity extends FragmentActivity implements
 
         @Override
         public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-            Object dataTransfer[] = new Object[2];
+            Object dataTransfer[] = new Object[3];
             GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
 
             switch (menuItem.getItemId()) {
@@ -228,6 +228,7 @@ public class MapsActivity extends FragmentActivity implements
                     String url = getUrl(latitude, longitude, petrolPump);
                     dataTransfer[0] = mMap;
                     dataTransfer[1] = url;
+                    dataTransfer[2] = getApplicationContext();
 
                     getNearbyPlacesData.execute(dataTransfer);
                     Toast.makeText(MapsActivity.this, "Showing nearby gas stations",

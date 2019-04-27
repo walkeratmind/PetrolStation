@@ -6,19 +6,25 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <fragment
-        android:id="@+id/place_autocomplete_fragment"
-        android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
-        />
+        android:layout_height="match_parent">
 
-    <fragment xmlns:map="http://schemas.android.com/apk/res-auto"
-        android:id="@+id/map"
-        android:name="com.google.android.gms.maps.SupportMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+        <fragment
+            android:id="@+id/place_autocomplete_fragment"
+            android:name="com.google.android.libraries.places.widget.AutocompleteSupportFragment"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            />
+
+        <fragment xmlns:map="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/map"
+            android:name="com.google.android.gms.maps.SupportMapFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/place_autocomplete_fragment"
+            />
+    </RelativeLayout>
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/show_nearby"
@@ -26,7 +32,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
-        android:backgroundTint="@color/red1"
+        android:backgroundTint="@color/White"
+        android:tint="@color/colorPrimaryDark"
+        app:backgroundTint="@color/White"
         app:srcCompat="@drawable/ic_local_gas_station_black_24dp" />
 
 </android.support.design.widget.CoordinatorLayout>

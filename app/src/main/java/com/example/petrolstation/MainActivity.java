@@ -102,7 +102,6 @@ public class MainActivity extends AppCompatActivity {
 
         mNavigationView.setNavigationItemSelectedListener(navigationItemSelectedListener);
 
-
         if (isServicesOk()) {
 //            init();
             fragmentManager.beginTransaction().replace(R.id.main_container, mapFragment).commit();
@@ -161,13 +160,17 @@ public class MainActivity extends AppCompatActivity {
                             fragment = new MapsFragment();
                             break;
                         case R.id.nav_location:
+                            fragment = new DetailsFragment();
                             break;
                         case R.id.nav_price:
                             fragment = new DetailsFragment();
                             break;
                         case R.id.nav_setting:
+                            fragment = new DetailsFragment();
                             break;
                         case R.id.nav_share:
+                            startActivity(new Intent(MainActivity.this, MapsActivity.class));
+                            fragment = new DetailsFragment();
                             break;
                         default:
 

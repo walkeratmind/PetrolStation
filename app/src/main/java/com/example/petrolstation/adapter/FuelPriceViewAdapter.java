@@ -42,7 +42,7 @@ public class FuelPriceViewAdapter extends RecyclerView.Adapter<FuelPriceViewAdap
         myVeiwHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Utils.FuelDetailDialog(context, fuelPriceList.get(position));
+                Utils.showFuelDetailDialog(context, fuelPriceList.get(position));
             }
         });
     }

@@ -20,6 +20,10 @@ public class Constants {
     public static final String BROWSER_KEY = "AIzaSyBsJyAKr9zTWqlAiLwdmI-u7vIqnu-_hg0";
     public static final String SERVER_API_KEY = "AIzaSyDYTQAQeHD6xuxxuKV36DLAczDw2IzRKWk";
 
+    // for petrol station console
+//    public static final String BROWSER_KEY = "AIzaSyDYg15IHg1OpWLw7DvJum6XK-n6sR9O-fA";
+//    public static final String SERVER_API_KEY = "AIzaSyBelL7RGQ205NtBiG1WJ2KfVqBgsNAcaqM";
+
     // USING FUEL FINDER
 //    public static final String BROWSER_KEY = "AIzaSyCBJyZvZMqgtvSHNSWqu9oIhBg7xNj4GgU";
 //    public static final String SERVER_API_KEY = "AIzaSyAPCKsN1VLbbpu3JH2O5YfCoV5nx57L-hw";

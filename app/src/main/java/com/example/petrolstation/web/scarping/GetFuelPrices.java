@@ -43,19 +43,20 @@ public class GetFuelPrices extends AsyncTask<Object, Void, ArrayList<FuelPrice>>
     @Override
     protected ArrayList<FuelPrice> doInBackground(Object... objects) {
 
-
         context = (Context) objects[0];
         // URL of a website...
         String url = (String) objects[1];
 
-//        databaseHelper = new DatabaseHelper(context);
+        databaseHelper = new DatabaseHelper(context);
 
-//        if (!databaseHelper.isFuelPriceDetailEmpty()) {
-//            // Already in sqlite Database
-//            fuelPriceArrayList = databaseHelper.getAllFuelPriceDetail();
-//            Log.d(TAG, "Already in Sqlite");
-//            isCancelled();
-//        }
+        Log.d(TAG, "is Table exist: " + databaseHelper.isTableExists(FuelPrice.TABLE_NAME, true));
+
+        if (!databaseHelper.isFuelPriceDetailEmpty()) {
+            // Already in sqlite Database
+            fuelPriceArrayList = databaseHelper.getAllFuelPriceDetail();
+            Log.d(TAG, "Already in Sqlite");
+            isCancelled();
+        }
         // Connecting to website
         Document content;
 
@@ -101,7 +102,7 @@ public class GetFuelPrices extends AsyncTask<Object, Void, ArrayList<FuelPrice>>
                             list.get(4), list.get(5), list.get(6), list.get(7));
 
                     // add to SQLITE database
-//                    long id = databaseHelper.insertFuelDetail(fuelPrice);
+                    long id = databaseHelper.insertFuelDetail(fuelPrice);
                     Log.d(TAG, "Petrol Price: " + fuelPrice.getPetrolPrice());
 //                    Log.d(TAG, "SQLITE Data: " + databaseHelper.getFuelPriceDetail(id).getDieselPrice());
                     fuelPriceArrayList.add(fuelPrice);
@@ -127,6 +128,8 @@ public class GetFuelPrices extends AsyncTask<Object, Void, ArrayList<FuelPrice>>
     @Override
     protected void onPostExecute(ArrayList<FuelPrice> fuelPriceArrayList) {
         super.onPostExecute(fuelPriceArrayList);
+
+        Log.d(TAG, "is Table exist: " + databaseHelper.isTableExists(FuelPrice.TABLE_NAME, true));
 
         parserResponseInterface.onParsingDone(fuelPriceArrayList);
     }

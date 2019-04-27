@@ -643,6 +643,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     public void onConnected(@Nullable Bundle bundle) {
         locationEnableDialog();
 
+        Log.d(TAG, "onConnected to googleApiClient");
         locationRequest = new LocationRequest();
         locationRequest.setInterval(100);
         locationRequest.setFastestInterval(1000);
@@ -902,7 +903,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         if(e != null) {
             Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }else {
-            Toast.makeText(getContext(), "Something went wrong, Try again", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Something went wrong, Try again", Toast.LENGTH_LONG).show();
         }
 
         Toast.makeText(getContext(), "Trying other Alternative", Toast.LENGTH_SHORT).show();
@@ -924,7 +925,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         mMap.moveCamera(center);
 
 
-        if(polylines.size()>0) {
+        if(polylines != null && polylines.size()>0) {
             for (Polyline poly : polylines) {
                 poly.remove();
             }
