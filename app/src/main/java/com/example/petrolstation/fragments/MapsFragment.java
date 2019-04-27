@@ -66,6 +66,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -259,6 +260,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         return view;
     }
+
 
     private void showNearbyGasStation(View view) {
 
@@ -786,6 +788,14 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 //            super.onActivityResult(requestCode, resultCode, data);
 //        }
     }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        // Store the selected map style, so we can assign it when the activity resumes.
+//        outState.putInt(SELECTED_STYLE, mSelectedStyleId);
+        super.onSaveInstanceState(outState);
+    }
+
 
 
     @Override

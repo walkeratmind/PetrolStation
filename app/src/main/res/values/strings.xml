@@ -28,4 +28,15 @@
     <string name="kerosene_price">Kerosene (In NPR):</string>
     <string name="lpg_price">LPG (In NPR):</string>
 
+
+    <!--    Styling    -->
+    <string name="styled_map_demo_label">Styled Map</string>
+    <string name="style_label_retro">Retro</string>
+    <string name="style_label_night">Night</string>
+    <string name="style_label_grayscale">Grayscale</string>
+    <string name="style_label_no_pois_no_transit">No POIs or transit</string>
+    <string name="style_label_default">Default</string>
+    <string name="style_choose">Choose style</string>
+    <string name="style_set_to">Style set to: %1$s</string>
+
 </resources>
