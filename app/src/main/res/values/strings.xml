@@ -11,8 +11,8 @@
     <string name="title_activity_navigation_drawer">NavigationDrawerActivity</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="nav_header_title">Android Studio</string>
-    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_title">Petrol Station</string>
+    <string name="nav_header_subtitle">Never Travel Much For Fuel</string>
     <string name="nav_header_desc">Navigation header</string>
     <string name="action_settings">Settings</string>
 
@@ -21,6 +21,7 @@
     <string name="menu_price">Fuel Price</string>
     <string name="menu_setting">Setting</string>
     <string name="menu_share">Share</string>
+    <string name="menu_search">Search</string>
 
     <string name="effective_date">Effective Date: </string>
     <string name="petrol_price">Petrol (In NPR): </string>

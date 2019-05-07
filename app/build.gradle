@@ -40,8 +40,11 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 
-    // for floating search
-    implementation 'com.github.arimorty:floatingsearchview:2.1.1'
+    // for material search view
+    implementation 'com.github.mancj:MaterialSearchBar:0.8.1'
+
+    implementation 'com.skyfishjy.ripplebackground:library:1.0.1'
+
 
     //for google map services
     implementation 'com.google.maps:google-maps-services:0.9.3'

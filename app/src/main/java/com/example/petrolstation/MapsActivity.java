@@ -41,8 +41,6 @@ import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.arlib.floatingsearchview.FloatingSearchView;
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.example.petrolstation.adapter.CustomInfoWindowAdapter;
 import com.example.petrolstation.fragments.DetailsFragment;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
@@ -529,7 +527,6 @@ public class MapsActivity extends FragmentActivity implements
     }
 
     public void setupSuggestionSection() {
-        List<? extends SearchSuggestion> mSuggestionList = null;
         LinearLayoutManager layoutManager = new LinearLayoutManager(getApplicationContext(),
                 LinearLayoutManager.VERTICAL, true);
 

@@ -14,6 +14,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -40,47 +42,6 @@ public class MainActivity extends AppCompatActivity {
     private ActionBarDrawerToggle toggle;
     private NavigationView mNavigationView;
 
-
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
-            Object dataTransfer[] = new Object[2];
-            GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
-
-            Fragment fragment = null;
-            FragmentManager fragmentManager = getSupportFragmentManager();
-
-            switch (menuItem.getItemId()) {
-                case R.id.navigation_home:
-                    fragment = new MapsFragment();
-                    break;
-//                    return true;
-                case R.id.navigation_gas_station:
-//                    mMap.clear();
-//                    String petrolPump = "gas_station";
-//
-//                    String url = getUrl(latitude, longitude, petrolPump);
-//                    dataTransfer[0] = mMap;
-//                    dataTransfer[1] = url;
-//
-//                    getNearbyPlacesData.execute(dataTransfer);
-//                    Toast.makeText(MapsActivity.this, "Showing nearby gas stations",
-//                            Toast.LENGTH_SHORT).show();
-                    return true;
-
-                case R.id.navigation_setting:
-                    fragment = new DetailsFragment();
-                    break;
-            }
-
-//            fragmentManager.beginTransaction().replace(R.id.main_container, fragment).commit();
-
-            return false;
-        }
-    };
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -89,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
         // view Binding here...
         drawerLayout = findViewById(R.id.drawer_layout);
         mNavigationView = findViewById(R.id.side_navigation_view);
-        bottomNavigationView = findViewById(R.id.bottom_navigation_bar);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -105,7 +65,6 @@ public class MainActivity extends AppCompatActivity {
         if (isServicesOk()) {
 //            init();
             fragmentManager.beginTransaction().replace(R.id.main_container, mapFragment).commit();
-            initFragment();
 //            this.finish();
         }
 
@@ -118,13 +77,11 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void initFragment() {
-
-        bottomNavigationView.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
-
-//        fragmentManager.beginTransaction().add(R.id.main_container, detailsFragment, "3")
-//                .hide(detailsFragment).commit();
+    // Get toolbar for Map fragment
+    public Toolbar getToolbar() {
+        return findViewById(R.id.toolbar);
     }
+
 
     private boolean isServicesOk() {
         Log.d(TAG, "isServicesOK: Checking google Services Version");

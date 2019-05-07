@@ -15,6 +15,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -25,16 +26,21 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
@@ -47,6 +53,7 @@ import com.example.petrolstation.R;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.example.petrolstation.utils.Utils;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.Result;
@@ -66,33 +73,41 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.AutocompletePrediction;
+import com.google.android.libraries.places.api.model.AutocompleteSessionToken;
 import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.api.model.TypeFilter;
+import com.google.android.libraries.places.api.net.FetchPlaceRequest;
+import com.google.android.libraries.places.api.net.FetchPlaceResponse;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest;
+import com.google.android.libraries.places.api.net.FindAutocompletePredictionsResponse;
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
-import com.google.maps.DirectionsApi;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.internal.PolylineEncoding;
 import com.google.maps.model.DirectionsResult;
 import com.google.maps.model.DirectionsRoute;
 import com.google.maps.model.TravelMode;
+import com.mancj.materialsearchbar.MaterialSearchBar;
+import com.mancj.materialsearchbar.adapter.SuggestionsAdapter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import static android.app.Activity.RESULT_OK;
+import static android.content.Context.INPUT_METHOD_SERVICE;
 import static com.example.petrolstation.Constants.BROWSER_KEY;
 import static com.example.petrolstation.Constants.DEFAULT_ZOOM;
 import static com.example.petrolstation.Constants.PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION;
@@ -127,9 +142,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     private LatLng start, end;
     private List<Polyline> polylines;
 
-    private static final int[] COLORS = new int[]{R.color.colorPrimaryDark,R.color.colorPrimary,R.color.colorAccent,R.color.blue3,R.color.blue3};
-
-
+    private static final int[] COLORS = new int[]{R.color.colorPrimaryDark, R.color.colorPrimary, R.color.colorAccent, R.color.blue3, R.color.blue3};
 
     int PROXIMITY_RADIUS = 10000;
 
@@ -148,6 +161,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 //    private PlaceDetectionClient mPlaceDetectionClient;
     private Places mPlaces;
 
+    //for places
+    private PlacesClient placesClient;
+    private List<AutocompletePrediction> predictionList;
+
     //for direction and routes
     private GeoApiContext geoApiContext = null;
 
@@ -155,18 +172,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
     private static final int LOCATION_UPDATE_INTERVAL = 3000;
-
-//    private void startUserLocationsRunnable() {
-//        Log.d(TAG, "startUserLocationsRunnable: starting runnable for retrieving updated locations.");
-//        mHandler.postDelayed(mRunnable = new Runnable() {
-//            @Override
-//            public void run() {
-//                getDeviceLocation();
-//                mHandler.postDelayed(mRunnable, LOCATION_UPDATE_INTERVAL);
-//            }
-//        }, LOCATION_UPDATE_INTERVAL);
-//    }
-
 
     private void stopLocationUpdates() {
         mHandler.removeCallbacks(mRunnable);
@@ -177,11 +182,13 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     private ImageView mGps, mInfo, mPlacePicker;
     private BottomNavigationView mBottomNavigationView;
     private ProgressDialog progressDialog;
-//    private FloatingSearchView mSearchView;
 
     View mapView;
 
     FloatingActionButton showNearbyPlace;
+
+    // For search view
+    private MaterialSearchBar materialSearchBar;
 
 //    private AutoCompleteTextView mSearchView;
 
@@ -223,6 +230,146 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         showNearbyPlace = view.findViewById(R.id.show_nearby);
 
+        materialSearchBar = view.findViewById(R.id.searchBar);
+
+        // hide search bar if it is not active
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!materialSearchBar.isSearchEnabled() && materialSearchBar.getVisibility() == View.VISIBLE) {
+                    materialSearchBar.setVisibility(View.GONE);
+                }
+                handler.postDelayed(this::run, 3000);
+            }
+        };
+        handler.post(runnable);
+
+        Places.initialize(getContext(), BROWSER_KEY);
+        placesClient = Places.createClient(getContext());
+        final AutocompleteSessionToken token = AutocompleteSessionToken.newInstance();
+
+        materialSearchBar.setOnSearchActionListener(new MaterialSearchBar.OnSearchActionListener() {
+            @Override
+            public void onSearchStateChanged(boolean enabled) {
+
+            }
+
+            @Override
+            public void onSearchConfirmed(CharSequence text) {
+                startSearch(text.toString(), true, null, true);
+            }
+
+            @Override
+            public void onButtonClicked(int buttonCode) {
+                if(buttonCode == MaterialSearchBar.BUTTON_NAVIGATION){
+                    //opening or closing a navigation drawer
+                } else if(buttonCode == MaterialSearchBar.BUTTON_BACK){
+                    materialSearchBar.disableSearch();
+                }
+            }
+        });
+
+        materialSearchBar.addTextChangeListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                FindAutocompletePredictionsRequest predictionsRequest = FindAutocompletePredictionsRequest.builder()
+                        .setCountry("np")
+                        .setTypeFilter(TypeFilter.ADDRESS)
+                        .setSessionToken(token)
+                        .setQuery(s.toString())
+                        .build();
+                placesClient.findAutocompletePredictions(predictionsRequest).addOnCompleteListener(new OnCompleteListener<FindAutocompletePredictionsResponse>() {
+                    @Override
+                    public void onComplete(@NonNull Task<FindAutocompletePredictionsResponse> task) {
+                        if(task.isSuccessful()){
+                            FindAutocompletePredictionsResponse predictionsResponse = task.getResult();
+                            if(predictionsResponse != null){
+                                predictionList = predictionsResponse.getAutocompletePredictions();
+                                List<String> suggestionsList = new ArrayList<>();
+                                for(int i=0;i< predictionList.size();i++){
+                                    AutocompletePrediction prediction = predictionList.get(i);
+                                    suggestionsList.add(prediction.getFullText(null).toString());
+                                }
+                                materialSearchBar.updateLastSuggestions(suggestionsList);
+                                if(!materialSearchBar.isSuggestionsVisible()){
+                                    materialSearchBar.showSuggestionsList();
+                                }
+                            }
+                        } else {
+                            Toast.makeText(getContext(), "Request Exceeded", Toast.LENGTH_LONG).show();
+                            Log.i(TAG, "prediction fetching task unsuccessful");
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
+
+        materialSearchBar.setSuggstionsClickListener(new SuggestionsAdapter.OnItemViewClickListener() {
+            @Override
+            public void OnItemClickListener(int position, View v) {
+                if(position >= predictionList.size()){
+                    return;
+                }
+                AutocompletePrediction selectedPrediction = predictionList.get(position);
+                String suggestion = materialSearchBar.getLastSuggestions().get(position).toString();
+                materialSearchBar.setText(suggestion);
+
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        materialSearchBar.clearSuggestions();
+                    }
+                }, 1000);
+                InputMethodManager imm = (InputMethodManager) getContext().getSystemService(INPUT_METHOD_SERVICE);
+                if(imm != null)
+                    imm.hideSoftInputFromWindow(materialSearchBar.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+                final String placeId = selectedPrediction.getPlaceId();
+                List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
+
+                FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build();
+                placesClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener(new OnSuccessListener<FetchPlaceResponse>() {
+                    @Override
+                    public void onSuccess(FetchPlaceResponse fetchPlaceResponse) {
+                        Place place = fetchPlaceResponse.getPlace();
+                        Log.i(TAG, "Place found: " + place.getName());
+                        LatLng latLngOfPlace = place.getLatLng();
+                        if(latLngOfPlace != null){
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLngOfPlace, DEFAULT_ZOOM));
+                            mMap.addMarker(new MarkerOptions().position(latLngOfPlace).title(place.getName().toString()));
+                        }
+                    }
+                }).addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        if(e instanceof ApiException){
+                            ApiException apiException = (ApiException) e;
+                            apiException.printStackTrace();
+                            int statusCode = apiException.getStatusCode();
+                            Log.i(TAG, "place not found: " + e.getMessage());
+                            Toast.makeText(getContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                            Log.i(TAG, "status code: " + statusCode);
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public void OnItemDeleteListener(int position, View v) {
+
+            }
+        });
+
         showNearbyPlace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -237,15 +384,12 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         mapView = mapFragment.getView();
 
-
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M) {
             getLocationPermission();
         } else {
             //permission is granted while app is installed
             mLocationPermissionGranted = true;
         }
-
-
 
         // Construct a GeoDataClient.
 //        mGeoDataClient = Places.getGeoDataClient(this, null);
@@ -261,6 +405,31 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         return view;
     }
 
+    private void startSearch(String toString, boolean b, Object o, boolean b1) {
+
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_search, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_search) {
+            materialSearchBar.setVisibility(View.VISIBLE);
+            materialSearchBar.enableSearch();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
 
     private void showNearbyGasStation(View view) {
 
@@ -315,9 +484,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                 .findFragmentById(R.id.place_autocomplete_fragment);
 
         autocompleteFragment.setPlaceFields(Arrays.asList(Place.Field.ID, Place.Field.NAME,
-                Place.Field.ADDRESS,Place.Field.ADDRESS_COMPONENTS, Place.Field.PHOTO_METADATAS,
+                Place.Field.ADDRESS, Place.Field.ADDRESS_COMPONENTS, Place.Field.PHOTO_METADATAS,
                 Place.Field.PLUS_CODE, Place.Field.PRICE_LEVEL, Place.Field.USER_RATINGS_TOTAL,
-                Place.Field.TYPES, Place.Field.VIEWPORT,Place.Field.LAT_LNG));
+                Place.Field.TYPES, Place.Field.VIEWPORT, Place.Field.LAT_LNG));
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
@@ -438,7 +607,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
 
     public void setupSuggestionSection() {
-        List<? extends SearchSuggestion> mSuggestionList = null;
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(),
                 LinearLayoutManager.VERTICAL, true);
 
@@ -578,37 +746,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             Log.e(TAG, "getDeviceLocation: SecurityException: " + e.getMessage());
         }
     }
-
-//    private void getDeviceLocation() {
-//        /*
-//         * Get the best and most recent location of the device, which may be null in rare
-//         * cases when a location is not available.
-//         */
-//        try {
-//            if (mLocationPermissionGranted) {
-//                Task locationResult = mFusedLocationProviderClient.getLastLocation();
-//                locationResult.addOnCompleteListener(this, new OnCompleteListener() {
-//                    @Override
-//                    public void onComplete(@NonNull Task task) {
-//                        if (task.isSuccessful()) {
-//                            // Set the map's camera position to the current location of the device.
-//                            mLastKnownLocation = (Location) task.getResult();
-//                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
-//                                    new LatLng(mLastKnownLocation.getLatitude(),
-//                                            mLastKnownLocation.getLongitude()), DEFAULT_ZOOM));
-//                        } else {
-//                            Log.d(TAG, "Current location is null. Using defaults.");
-//                            Log.e(TAG, "Exception: %s", task.getException());
-//                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(mDefaultLocation, DEFAULT_ZOOM));
-//                            mMap.getUiSettings().setMyLocationButtonEnabled(false);
-//                        }
-//                    }
-//                });
-//            }
-//        } catch(SecurityException e)  {
-//            Log.e("Exception: %s", e.getMessage());
-//        }
-//    }
 
     private void moveCamera(LatLng latLng, float zoom) {
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude);
@@ -798,7 +935,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     }
 
 
-
     @Override
     public void onInfoWindowClick(final Marker marker) {
         if (marker.getSnippet().equals("You are here")) {
@@ -900,9 +1036,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         // The Routing request failed
         progressDialog.dismiss();
-        if(e != null) {
+        if (e != null) {
             Toast.makeText(getContext(), "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-        }else {
+        } else {
             Toast.makeText(getContext(), "Something went wrong, Try again", Toast.LENGTH_LONG).show();
         }
 
@@ -925,7 +1061,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         mMap.moveCamera(center);
 
 
-        if(polylines != null && polylines.size()>0) {
+        if (polylines != null && polylines.size() > 0) {
             for (Polyline poly : polylines) {
                 poly.remove();
             }
@@ -933,19 +1069,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         polylines = new ArrayList<>();
         //add route(s) to the map.
-        for (int i = 0; i <route.size(); i++) {
+        for (int i = 0; i < route.size(); i++) {
 
             //In case of more than 5 alternative routes
             int colorIndex = i % COLORS.length;
 
             PolylineOptions polyOptions = new PolylineOptions();
             polyOptions.color(getResources().getColor(COLORS[colorIndex]));
-            polyOptions.width(10 + i * 3);
+            polyOptions.width(5 + i * 3);
             polyOptions.addAll(route.get(i).getPoints());
             Polyline polyline = mMap.addPolyline(polyOptions);
             polylines.add(polyline);
 
-            Toast.makeText(getContext(),"Route "+ (i+1) +": distance - "+ route.get(i).getDistanceValue()+": duration - "+ route.get(i).getDurationValue(),Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Route " + (i + 1) + ": distance - " + route.get(i).getDistanceValue() + ": duration - " + route.get(i).getDurationValue(), Toast.LENGTH_SHORT).show();
+
         }
 
         // Start marker
