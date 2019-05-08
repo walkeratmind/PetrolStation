@@ -56,6 +56,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.common.api.Result;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
@@ -63,7 +64,9 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.location.LocationSettingsStatusCodes;
+import com.google.android.gms.location.SettingsClient;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -73,6 +76,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -122,8 +126,26 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         GoogleMap.OnInfoWindowClickListener,
         RoutingListener {
 
-
     private static final String TAG = "Maps Activity";
+
+    //map styles variables
+    private static final String SELECTED_STYLE = "selected_style";
+
+    // Stores the ID of the currently selected style, so that we can re-apply it when
+    // the activity restores state, for example when the device changes orientation.
+    private int mSelectedStyleId = R.string.style_label_default;
+
+    // These are simply the string resource IDs for each of the style names. We use them
+    // as identifiers when choosing which style to apply.
+    private int mStyleIds[] = {
+            R.string.style_label_retro,
+            R.string.style_label_night,
+            R.string.style_label_grayscale,
+            R.string.style_label_no_pois_no_transit,
+            R.string.style_label_default,
+    };
+
+    private static final LatLng SYDNEY = new LatLng(-33.8688, 151.2093);
 
     //vars
     private GoogleMap mMap;
@@ -215,11 +237,21 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             mMap.addMarker(new MarkerOptions().position(current)
                     .title("Marker in current place"));
         }
-        LatLng nepal = new LatLng(27.7172, 85.3240);
-        mMap.addMarker(new MarkerOptions().position(nepal).title("Kathmandu"));
+//        LatLng nepal = new LatLng(27.7172, 85.3240);
+//        mMap.addMarker(new MarkerOptions().position(nepal).title("Kathmandu"));
+
+        mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
+            @Override
+            public boolean onMyLocationButtonClick() {
+                if (materialSearchBar.isSuggestionsVisible())
+                    materialSearchBar.clearSuggestions();
+                if (materialSearchBar.isSearchEnabled())
+                    materialSearchBar.disableSearch();
+                return false;
+            }
+        });
 
     }
-
 
     @Nullable
     @Override
@@ -262,9 +294,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
             @Override
             public void onButtonClicked(int buttonCode) {
-                if(buttonCode == MaterialSearchBar.BUTTON_NAVIGATION){
+                if (buttonCode == MaterialSearchBar.BUTTON_NAVIGATION) {
                     //opening or closing a navigation drawer
-                } else if(buttonCode == MaterialSearchBar.BUTTON_BACK){
+                } else if (buttonCode == MaterialSearchBar.BUTTON_BACK) {
                     materialSearchBar.disableSearch();
                 }
             }
@@ -287,17 +319,17 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                 placesClient.findAutocompletePredictions(predictionsRequest).addOnCompleteListener(new OnCompleteListener<FindAutocompletePredictionsResponse>() {
                     @Override
                     public void onComplete(@NonNull Task<FindAutocompletePredictionsResponse> task) {
-                        if(task.isSuccessful()){
+                        if (task.isSuccessful()) {
                             FindAutocompletePredictionsResponse predictionsResponse = task.getResult();
-                            if(predictionsResponse != null){
+                            if (predictionsResponse != null) {
                                 predictionList = predictionsResponse.getAutocompletePredictions();
                                 List<String> suggestionsList = new ArrayList<>();
-                                for(int i=0;i< predictionList.size();i++){
+                                for (int i = 0; i < predictionList.size(); i++) {
                                     AutocompletePrediction prediction = predictionList.get(i);
                                     suggestionsList.add(prediction.getFullText(null).toString());
                                 }
                                 materialSearchBar.updateLastSuggestions(suggestionsList);
-                                if(!materialSearchBar.isSuggestionsVisible()){
+                                if (!materialSearchBar.isSuggestionsVisible()) {
                                     materialSearchBar.showSuggestionsList();
                                 }
                             }
@@ -318,7 +350,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         materialSearchBar.setSuggstionsClickListener(new SuggestionsAdapter.OnItemViewClickListener() {
             @Override
             public void OnItemClickListener(int position, View v) {
-                if(position >= predictionList.size()){
+                if (position >= predictionList.size()) {
                     return;
                 }
                 AutocompletePrediction selectedPrediction = predictionList.get(position);
@@ -332,27 +364,39 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                     }
                 }, 1000);
                 InputMethodManager imm = (InputMethodManager) getContext().getSystemService(INPUT_METHOD_SERVICE);
-                if(imm != null)
+                if (imm != null)
                     imm.hideSoftInputFromWindow(materialSearchBar.getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
                 final String placeId = selectedPrediction.getPlaceId();
-                List<Place.Field> placeFields = Arrays.asList(Place.Field.LAT_LNG);
+
+                // set fields
+                List<Place.Field> placeFields = Arrays.asList(Place.Field.ID, Place.Field.NAME,
+                        Place.Field.ADDRESS, Place.Field.ADDRESS_COMPONENTS, Place.Field.PHOTO_METADATAS,
+                        Place.Field.PLUS_CODE, Place.Field.PRICE_LEVEL, Place.Field.USER_RATINGS_TOTAL,
+                        Place.Field.TYPES, Place.Field.VIEWPORT, Place.Field.LAT_LNG);
 
                 FetchPlaceRequest fetchPlaceRequest = FetchPlaceRequest.builder(placeId, placeFields).build();
                 placesClient.fetchPlace(fetchPlaceRequest).addOnSuccessListener(new OnSuccessListener<FetchPlaceResponse>() {
                     @Override
                     public void onSuccess(FetchPlaceResponse fetchPlaceResponse) {
+                        Log.d(TAG, "onSuccess Search, " + fetchPlaceResponse);
                         Place place = fetchPlaceResponse.getPlace();
-                        Log.i(TAG, "Place found: " + place.getName());
-                        LatLng latLngOfPlace = place.getLatLng();
-                        if(latLngOfPlace != null){
-                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLngOfPlace, DEFAULT_ZOOM));
-                            mMap.addMarker(new MarkerOptions().position(latLngOfPlace).title(place.getName().toString()));
+                        Log.i(TAG, "Place : " + place);
+                        if (place.getLatLng() != null) {
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(place.getLatLng(), DEFAULT_ZOOM));
+
+                            String title;
+                            if (place.getName() != null) {
+                                title = place.getName().toString();
+                            } else {
+                                title = "Searched Result";
+                            }
+                            mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(title));
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        if(e instanceof ApiException){
+                        if (e instanceof ApiException) {
                             ApiException apiException = (ApiException) e;
                             apiException.printStackTrace();
                             int statusCode = apiException.getStatusCode();
@@ -423,12 +467,18 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_search) {
-            materialSearchBar.setVisibility(View.VISIBLE);
-            materialSearchBar.enableSearch();
-            return true;
+
+        switch (item.getItemId()) {
+            case R.id.action_search:
+                materialSearchBar.setVisibility(View.VISIBLE);
+                materialSearchBar.enableSearch();
+                break;
+            case R.id.action_choose_style:
+                showStylesDialog();
+                break;
         }
-        return super.onOptionsItemSelected(item);
+        return true;
+//        return super.onOptionsItemSelected(item);
     }
 
     private void showNearbyGasStation(View view) {
@@ -565,6 +615,39 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     private void init() {
         Log.d(TAG, "init: Initializing on Map Ready");
 
+        // set map style
+        setSelectedStyle();
+
+        //check if gps is enabled or not and then request user to enable it
+        LocationRequest locationRequest = LocationRequest.create();
+        locationRequest.setInterval(10000);
+        locationRequest.setFastestInterval(5000);
+        locationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        SettingsClient settingsClient = LocationServices.getSettingsClient(getContext());
+        Task<LocationSettingsResponse> task = settingsClient.checkLocationSettings(builder.build());
+
+        task.addOnSuccessListener(getActivity(), new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                getDeviceLocation();
+            }
+        });
+
+        task.addOnFailureListener(getActivity(), new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    ResolvableApiException resolvable = (ResolvableApiException) e;
+                    try {
+                        resolvable.startResolutionForResult(getActivity(), 51);
+                    } catch (IntentSender.SendIntentException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
         buildGoogleApiClient();
 
         initDirectionApi();
@@ -778,43 +861,43 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        locationEnableDialog();
-
-        Log.d(TAG, "onConnected to googleApiClient");
-        locationRequest = new LocationRequest();
-        locationRequest.setInterval(100);
-        locationRequest.setFastestInterval(1000);
-        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-
-        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(),
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this::onLocationChanged);
-
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
-            return;
-        }
-        if (mLocationPermissionGranted) {
-            mFusedLocationProviderClient.getLastLocation()
-                    .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
-                                // Logic to handle location object
-                                mClientLocation = location;
-                            }
-                        }
-                    });
-            Log.d(TAG, "On Connected Current Location: " + mClientLocation);
-        }
+//        locationEnableDialog();
+//
+//        Log.d(TAG, "onConnected to googleApiClient");
+//        locationRequest = new LocationRequest();
+//        locationRequest.setInterval(100);
+//        locationRequest.setFastestInterval(1000);
+//        locationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+//
+//        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) !=
+//                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(getContext(),
+//                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+//            // TODO: Consider calling
+//            //    ActivityCompat#requestPermissions
+//
+//            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, locationRequest, this::onLocationChanged);
+//
+//            // here to request the missing permissions, and then overriding
+//            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+//            //                                          int[] grantResults)
+//            // to handle the case where the user grants the permission. See the documentation
+//            // for ActivityCompat#requestPermissions for more details.
+//            return;
+//        }
+//        if (mLocationPermissionGranted) {
+//            mFusedLocationProviderClient.getLastLocation()
+//                    .addOnSuccessListener(getActivity(), new OnSuccessListener<Location>() {
+//                        @Override
+//                        public void onSuccess(Location location) {
+//                            // Got last known location. In some rare situations this can be null.
+//                            if (location != null) {
+//                                // Logic to handle location object
+//                                mClientLocation = location;
+//                            }
+//                        }
+//                    });
+//            Log.d(TAG, "On Connected Current Location: " + mClientLocation);
+//        }
     }
 
     @Override
@@ -908,10 +991,16 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         if (requestCode == REQUEST_CHECK_SETTINGS) {
 
             if (resultCode == RESULT_OK) {
-
+                getDeviceLocation();
                 Toast.makeText(getContext(), "GPS enabled", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getContext(), "GPS is not enabled", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        if (requestCode == 51) {
+            if (resultCode == RESULT_OK) {
+                getDeviceLocation();
             }
         }
 
@@ -1102,6 +1191,84 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     public void onRoutingCancelled() {
         Log.i(TAG, "Routing was cancelled.");
 
+    }
+
+
+    // MAP Styles
+
+    // Show style dialog
+    private void showStylesDialog() {
+        // mStyleIds stores each style's resource ID, and we extract the names here, rather
+        // than using an XML array resource which AlertDialog.Builder.setItems() can also
+        // accept. We do this since using an array resource would mean we would not have
+        // constant values we can switch/case on, when choosing which style to apply.
+        List<String> styleNames = new ArrayList<>();
+        for (int style : mStyleIds) {
+            styleNames.add(getString(style));
+        }
+
+        android.support.v7.app.AlertDialog.Builder builder = new android.support.v7.app.AlertDialog.Builder(getContext());
+        builder.setTitle(getString(R.string.style_choose));
+        builder.setItems(styleNames.toArray(new CharSequence[styleNames.size()]),
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        mSelectedStyleId = mStyleIds[which];
+                        String msg = getString(R.string.style_set_to, getString(mSelectedStyleId));
+                        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                        Log.d(TAG, msg);
+                        setSelectedStyle();
+                    }
+                });
+        builder.show();
+    }
+
+    private void setSelectedStyle() {
+        MapStyleOptions style;
+        switch (mSelectedStyleId) {
+            case R.string.style_label_retro:
+                // Sets the retro style via raw resource JSON.
+                style = MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.mapstyle_retro);
+                break;
+            case R.string.style_label_night:
+                // Sets the night style via raw resource JSON.
+                style = MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.mapstyle_night);
+                break;
+            case R.string.style_label_grayscale:
+                // Sets the grayscale style via raw resource JSON.
+                style = MapStyleOptions.loadRawResourceStyle(getContext(), R.raw.mapstyle_grayscale);
+                break;
+            case R.string.style_label_no_pois_no_transit:
+                // Sets the no POIs or transit style via JSON string.
+                style = new MapStyleOptions("[" +
+                        "  {" +
+                        "    \"featureType\":\"poi.business\"," +
+                        "    \"elementType\":\"all\"," +
+                        "    \"stylers\":[" +
+                        "      {" +
+                        "        \"visibility\":\"off\"" +
+                        "      }" +
+                        "    ]" +
+                        "  }," +
+                        "  {" +
+                        "    \"featureType\":\"transit\"," +
+                        "    \"elementType\":\"all\"," +
+                        "    \"stylers\":[" +
+                        "      {" +
+                        "        \"visibility\":\"off\"" +
+                        "      }" +
+                        "    ]" +
+                        "  }" +
+                        "]");
+                break;
+            case R.string.style_label_default:
+                // Removes previously set style, by setting it to null.
+                style = null;
+                break;
+            default:
+                return;
+        }
+        mMap.setMapStyle(style);
     }
 
 }

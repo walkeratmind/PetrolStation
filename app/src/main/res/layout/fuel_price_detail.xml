@@ -29,7 +29,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/texStyle"
+                style="@style/integerValueStyle"
                 android:text="effective date here" />
         </LinearLayout>
 
@@ -52,7 +52,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/texStyle"
+                style="@style/integerValueStyle"
                 />
         </LinearLayout>
 
@@ -73,7 +73,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/texStyle"
+                style="@style/integerValueStyle"
                 />
         </LinearLayout>
 
@@ -94,7 +94,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/texStyle"
+                style="@style/integerValueStyle"
                 />
         </LinearLayout>
 
@@ -115,7 +115,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                style="@style/texStyle"
+                style="@style/integerValueStyle"
                 />
         </LinearLayout>
         <Button

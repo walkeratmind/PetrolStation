@@ -60,4 +60,6 @@ dependencies {
     // For Routing
     implementation 'com.github.jd-alexander:library:1.1.0'
 
+
+    implementation 'com.airbnb.android:lottie:2.5.5'
 }

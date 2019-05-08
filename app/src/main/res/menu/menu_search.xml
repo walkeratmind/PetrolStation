@@ -7,4 +7,10 @@
         android:icon="@drawable/ic_search_black_24dp"
         app:showAsAction="always"
         />
+
+    <item android:id="@+id/action_choose_style"
+        android:title="Choose Style"
+        android:icon="@drawable/ic_map_black_24dp"
+        app:showAsAction="ifRoom"
+        />
 </menu>

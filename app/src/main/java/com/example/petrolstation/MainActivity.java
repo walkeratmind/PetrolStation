@@ -1,6 +1,8 @@
 package com.example.petrolstation;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -14,9 +16,11 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.example.petrolstation.fragments.DetailsFragment;
@@ -105,6 +109,57 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    @Override
+    public void onBackPressed() {
+        exitByBackKey();
+    }
+
+//    public boolean onKeyDown(int keyCode, KeyEvent event) {
+//        if (keyCode == KeyEvent.KEYCODE_BACK) {
+//            exitByBackKey();
+//
+//            //moveTaskToBack(false);
+//
+//            return true;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
+
+    protected void exitByBackKey() {
+
+        AlertDialog alertbox = new AlertDialog.Builder(this)
+                .setMessage("Do you want to exit application?")
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+
+                    // do something when the button is clicked
+                    public void onClick(DialogInterface arg0, int arg1) {
+
+                        finish();
+                        //close();
+
+
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+
+                    // do something when the button is clicked
+                    public void onClick(DialogInterface arg0, int arg1) {
+                    }
+                })
+                .show();
+
+    }
+
+
+    public void shareText(View view) {
+        Intent intent = new Intent(android.content.Intent.ACTION_SEND);
+        intent.setType("text/plain");
+        String shareBodyText = "Your shearing message goes here";
+        intent.putExtra(android.content.Intent.EXTRA_SUBJECT, "Subject/Title");
+        intent.putExtra(android.content.Intent.EXTRA_TEXT, shareBodyText);
+        startActivity(Intent.createChooser(intent, "Choose sharing method"));
+    }
+
     private NavigationView.OnNavigationItemSelectedListener navigationItemSelectedListener =
             new NavigationView.OnNavigationItemSelectedListener() {
 
@@ -117,8 +172,8 @@ public class MainActivity extends AppCompatActivity {
                             fragment = new MapsFragment();
                             break;
                         case R.id.nav_location:
-                            fragment = new DetailsFragment();
-                            break;
+                            startActivity(new Intent(MainActivity.this, MapsActivity.class));
+                            return true;
                         case R.id.nav_price:
                             fragment = new DetailsFragment();
                             break;
@@ -126,9 +181,14 @@ public class MainActivity extends AppCompatActivity {
                             fragment = new DetailsFragment();
                             break;
                         case R.id.nav_share:
-                            startActivity(new Intent(MainActivity.this, MapsActivity.class));
-                            fragment = new DetailsFragment();
-                            break;
+                            Intent sharingIntent = new Intent(android.content.Intent.ACTION_SEND);
+                            sharingIntent.setType("text/plain");
+                            String shareBodyText = "Petrol Station , Travel Less For Fuel,\nplaystore download link here...";
+                            sharingIntent.putExtra(android.content.Intent.EXTRA_SUBJECT, "About Petrol Station");
+                            sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBodyText);
+                            startActivity(Intent.createChooser(sharingIntent, "Shearing Option"));
+
+                            return true;
                         default:
 
                     }

@@ -10,12 +10,17 @@
             android:title="@string/menu_map" />
         <item
             android:id="@+id/nav_location"
-            android:icon="@drawable/ic_local_gas_station_black_24dp"
-            android:title="@string/menu_location" />
+            android:icon="@drawable/quantum_ic_search_grey600_24"
+            android:title="Search Locations"/>
+        <!--<item-->
+            <!--android:id="@+id/nav_location"-->
+            <!--android:icon="@drawable/ic_local_gas_station_black_24dp"-->
+            <!--android:title="@string/menu_location" />-->
         <item
             android:id="@+id/nav_price"
             android:icon="@drawable/ic_attach_money_black_24dp"
             android:title="@string/menu_price" />
+
         <item
             android:id="@+id/nav_setting"
             android:icon="@drawable/ic_menu_manage"

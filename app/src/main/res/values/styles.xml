@@ -40,6 +40,13 @@
         <item name="android:padding">@dimen/padding_regular</item>
     </style>
 
+    <style name="integerValueStyle" parent="android:Widget.TextView">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/red1</item>
+        <item name="android:padding">@dimen/padding_regular</item>
+    </style>
+
 
     <style name="AppTheme.NoActionBarForNav.NoActionBar">
         <item name="windowActionBar">false</item>
