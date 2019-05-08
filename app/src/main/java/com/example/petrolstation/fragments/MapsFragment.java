@@ -193,7 +193,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     // for polylines
     private Handler mHandler = new Handler();
     private Runnable mRunnable;
-    private static final int LOCATION_UPDATE_INTERVAL = 3000;
+    private static final int LOCATION_UPDATE_INTERVAL = 1000;
 
     private void stopLocationUpdates() {
         mHandler.removeCallbacks(mRunnable);

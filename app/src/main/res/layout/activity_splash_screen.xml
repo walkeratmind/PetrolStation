@@ -5,22 +5,28 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="@drawable/gradient_background">
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/animation_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_centerInParent="true"
-        app:lottie_fileName="bouncy_map_marker.json"
-        app:lottie_loop="true"
-        app:lottie_enableMergePathsForKitKatAndAbove="true"
-        app:lottie_autoPlay="true" />
+    <FrameLayout
+        android:id="@+id/logo"
+        android:layout_width="270dp"
+        android:layout_height="270dp"
+        android:layout_centerInParent="true">
+
+        <com.airbnb.lottie.LottieAnimationView
+            android:id="@+id/animation_view"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:lottie_autoPlay="true"
+            app:lottie_enableMergePathsForKitKatAndAbove="true"
+            app:lottie_fileName="bouncy_map_marker.json"
+            app:lottie_loop="true" />
+    </FrameLayout>
 
     <TextView
         android:id="@+id/title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:layout_below="@id/animation_view"
+        android:layout_below="@id/logo"
         android:text="Petrol Station"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="32sp"
