@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "621512784208",
+    "firebase_url": "https://petrolstation-233b3.firebaseio.com",
+    "project_id": "petrolstation-233b3",
+    "storage_bucket": "petrolstation-233b3.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:621512784208:android:7fb441398fad370b",
+        "android_client_info": {
+          "package_name": "com.example.petrolstation"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "621512784208-sqiqgd73src0utfduckepmv0qkn57021.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.petrolstation",
+            "certificate_hash": "7c89153a7a94f5a8a68c45175d4dd1db493d2566"
+          }
+        },
+        {
+          "client_id": "621512784208-1msl9a7l3p4jk34ia2nugun5m60pkpni.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCFO4Vg7UJtu8rGNJFVh04lLOm7Dm82mdo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "621512784208-1msl9a7l3p4jk34ia2nugun5m60pkpni.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

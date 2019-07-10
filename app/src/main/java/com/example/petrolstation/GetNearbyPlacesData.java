@@ -5,10 +5,15 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.DrawableRes;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
+import com.airbnb.lottie.LottieAnimationView;
+import com.arsy.maps_library.MapRadar;
+import com.arsy.maps_library.MapRipple;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -32,12 +37,26 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
     String url;
     Context context;
 
+    // for animation
+    LatLng latLng;
+
+    @Override
+    protected void onPreExecute() {
+        super.onPreExecute();
+    }
+
     @Override
     protected String doInBackground(Object... objects) {
 
         mMap = (GoogleMap) objects[0];
         url = (String) objects[1];
         context = (Context) objects[2];
+        double[] location = (double[]) objects[3];
+
+        // for ripple animation
+        latLng = new LatLng(location[0], location[1]);
+//        Log.d(TAG,"latlng: " + latLng);
+
 
         DownloadURL downloadURL = new DownloadURL();
 
@@ -55,7 +74,7 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
         List<HashMap<String, String>> nearbyPlaceList = null;
         DataParser parser = new DataParser();
         nearbyPlaceList = parser.parse(s);
-        Log.d(TAG,"called parse method");
+        Log.d(TAG, "called parse method");
 //        showNearbyPlaces(nearbyPlaceList);
         if (nearbyPlaceList != null) {
             showNearbyPlaces(nearbyPlaceList);
@@ -63,9 +82,8 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
     }
 
     private void showNearbyPlaces(List<HashMap<String, String>> nearbyPlaceList) {
-        for(int i = 0; i < nearbyPlaceList.size(); i++)
-        {
-            Log.d(TAG," Nearby Places: " + nearbyPlaceList.get(i));
+        for (int i = 0; i < nearbyPlaceList.size(); i++) {
+            Log.d(TAG, " Nearby Places: " + nearbyPlaceList.get(i));
             MarkerOptions markerOptions = new MarkerOptions();
             HashMap<String, String> googlePlace = nearbyPlaceList.get(i);
 
@@ -74,10 +92,10 @@ public class GetNearbyPlacesData extends AsyncTask<Object, String, String> {
             double lat = Double.parseDouble(Objects.requireNonNull(googlePlace.get("lat")));
             double lng = Double.parseDouble(Objects.requireNonNull(googlePlace.get("lng")));
 
-            LatLng latLng = new LatLng( lat, lng);
+            LatLng latLng = new LatLng(lat, lng);
             markerOptions.position(latLng);
-            markerOptions.title(placeName + " : "+ vicinity);
-            markerOptions.icon(bitmapDescriptorFromVector(context ,R.drawable.ic_local_gas_station_black_24dp));
+            markerOptions.title(placeName + " : " + vicinity);
+            markerOptions.icon(bitmapDescriptorFromVector(context, R.drawable.ic_local_gas_station_purple_24dp));
 //            markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
 
             mMap.addMarker(markerOptions);

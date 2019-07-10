@@ -40,4 +40,7 @@
     <string name="style_choose">Choose style</string>
     <string name="style_set_to">Style set to: %1$s</string>
 
+    <!-- For About Us Page -->
+    <string name="copy_right" translatable="false">Copyrights © %1$d</string>
+
 </resources>

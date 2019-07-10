@@ -41,6 +41,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arsy.maps_library.MapRadar;
+import com.arsy.maps_library.MapRipple;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
@@ -214,6 +216,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
 //    private AutoCompleteTextView mSearchView;
 
+    // for animation
+    MapRipple mapRipple;
+    MapRadar mapRadar;
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -243,6 +249,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             @Override
             public boolean onMyLocationButtonClick() {
+                // update the device location
+                getDeviceLocation();
                 if (materialSearchBar.isSuggestionsVisible())
                     materialSearchBar.clearSuggestions();
                 if (materialSearchBar.isSearchEnabled())
@@ -251,6 +259,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             }
         });
 
+//        mapRadar = new MapRadar(mMap, new LatLng(latitude, longitude), getContext());
+//        //mapRadar.withClockWiseAnticlockwise(true);
+//        mapRadar.withDistance(PROXIMITY_RADIUS);
+//        mapRadar.withClockwiseAnticlockwiseDuration(2);
+//        //mapRadar.withOuterCircleFillColor(Color.parseColor("#12000000"));
+//        mapRadar.withOuterCircleStrokeColor(Color.parseColor("#fccd29"));
+//        //mapRadar.withRadarColors(Color.parseColor("#00000000"), Color.parseColor("#ff000000"));  //starts from transparent to fuly black
+//        mapRadar.withRadarColors(Color.parseColor("#00fccd29"), Color.parseColor("#fffccd29"));  //starts from transparent to fuly black
+//        //mapRadar.withOuterCircleStrokewidth(7);
+//        //mapRadar.withRadarSpeed(5);
+//        mapRadar.withOuterCircleTransparency(0.5f);
+//        mapRadar.withRadarTransparency(0.5f);
+//
+//        mapRadar.startRadarAnimation();
     }
 
     @Nullable
@@ -390,6 +412,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                             } else {
                                 title = "Searched Result";
                             }
+                            Log.d(TAG, "showing nearby gas station of marker");
+                            showNearbyGasStation(view, place.getLatLng().latitude, place.getLatLng().longitude);
+                            // set latitute and longitude of marker
+//                            latitude = place.getLatLng().latitude;
+//                            longitude = place.getLatLng().longitude;
                             mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(title));
                         }
                     }
@@ -417,7 +444,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         showNearbyPlace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showNearbyGasStation(view);
+                showNearbyGasStation(view, latitude, longitude);
             }
         });
 
@@ -481,10 +508,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 //        return super.onOptionsItemSelected(item);
     }
 
-    private void showNearbyGasStation(View view) {
+    private void showNearbyGasStation(View view, double latitude, double longitude) {
 
         if (Utils.isNetworkAvailable(getContext())) {
-            Object dataTransfer[] = new Object[3];
+            Object dataTransfer[] = new Object[4];
             GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
 
             mMap.clear();
@@ -494,6 +521,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             dataTransfer[0] = mMap;
             dataTransfer[1] = url;
             dataTransfer[2] = getContext();
+            dataTransfer[3] = new double[] {latitude, longitude};
 
             getNearbyPlacesData.execute(dataTransfer);
             Snackbar.make(view, "Showing Nearby Gas Station", Snackbar.LENGTH_SHORT)
@@ -506,7 +534,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                     .setAction("RETRY", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            showNearbyGasStation(view);
+                            showNearbyGasStation(view, latitude, longitude);
                         }
                     });
 
@@ -617,6 +645,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
         // set map style
         setSelectedStyle();
+
+        // hide direction and gps pointer
+        mMap.getUiSettings().setMapToolbarEnabled(false);
 
         //check if gps is enabled or not and then request user to enable it
         LocationRequest locationRequest = LocationRequest.create();
@@ -915,6 +946,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         if (location != null) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+            // update the client location
+            mClientLocation = location;
         }
         mLastKnownLocation = location;
         if (currentLocationMarker != null) {
@@ -1091,7 +1124,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             progressDialog = ProgressDialog.show(getContext(), "Please wait.",
                     "Fetching route information.", true);
 
-            start = new LatLng(mClientLocation.getLatitude(), mClientLocation.getLongitude());
+//            start = new LatLng(mClientLocation.getLatitude(), mClientLocation.getLongitude());
+            start = new LatLng(latitude, longitude);
             end = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
 
             Routing routing = new Routing.Builder()
@@ -1122,7 +1156,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public void onRoutingFailure(RouteException e) {
-
         // The Routing request failed
         progressDialog.dismiss();
         if (e != null) {
@@ -1148,7 +1181,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
 
         mMap.moveCamera(center);
-
 
         if (polylines != null && polylines.size() > 0) {
             for (Polyline poly : polylines) {
@@ -1194,7 +1226,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     }
 
 
-    // MAP Styles
+    // MAP STYLES
 
     // Show style dialog
     private void showStylesDialog() {
