@@ -34,7 +34,7 @@ public class FuelPriceViewAdapter extends RecyclerView.Adapter<FuelPriceViewAdap
 
     @Override
     public void onBindViewHolder(@NonNull MyVeiwHolder myVeiwHolder, int position) {
-        FuelPrice fuelPrice = fuelPriceList.get(position);
+            FuelPrice fuelPrice = fuelPriceList.get(position);
 
         myVeiwHolder.effectiveDate.setText(fuelPrice.getEffectiveDate());
         myVeiwHolder.petrolPrice.setText(fuelPrice.getPetrolPrice());

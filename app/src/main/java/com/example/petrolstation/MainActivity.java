@@ -24,6 +24,7 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.example.petrolstation.fragments.DetailsFragment;
+import com.example.petrolstation.fragments.GasStationListFragment;
 import com.example.petrolstation.fragments.MapsFragment;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -178,15 +179,15 @@ public class MainActivity extends AppCompatActivity {
                         case R.id.nav_map:
                             fragment = new MapsFragment();
                             break;
-//                        case R.id.nav_location:
-//                            startActivity(new Intent(MainActivity.this, MapsActivity.class));
-//                            return true;
+                        case R.id.nav_station_list:
+                            fragment = new GasStationListFragment();
+                            break;
                         case R.id.nav_price:
                             fragment = new DetailsFragment();
                             break;
-//                        case R.id.nav_setting:
-//                            fragment = new DetailsFragment();
-//                            break;
+                        case R.id.nav_add_station:
+                            startActivity(new Intent(MainActivity.this, SuggestionActivity.class));
+                            return true;
                         case R.id.nav_about:
                             startActivity(new Intent(MainActivity.this, AboutUsActivity.class));
                             return true;

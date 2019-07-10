@@ -3,12 +3,17 @@ package com.example.petrolstation.fragments;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Build;
@@ -16,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -52,6 +58,7 @@ import com.example.petrolstation.Constants;
 import com.example.petrolstation.GetNearbyPlacesData;
 import com.example.petrolstation.MapsActivity;
 import com.example.petrolstation.R;
+import com.example.petrolstation.models.GasStation;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.example.petrolstation.utils.Utils;
 import com.google.android.gms.common.ConnectionResult;
@@ -75,6 +82,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -99,6 +107,9 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.internal.PolylineEncoding;
@@ -511,6 +522,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     private void showNearbyGasStation(View view, double latitude, double longitude) {
 
         if (Utils.isNetworkAvailable(getContext())) {
+            showFirebaseStations();
             Object dataTransfer[] = new Object[4];
             GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
 
@@ -521,7 +533,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             dataTransfer[0] = mMap;
             dataTransfer[1] = url;
             dataTransfer[2] = getContext();
-            dataTransfer[3] = new double[] {latitude, longitude};
+            dataTransfer[3] = new double[]{latitude, longitude};
 
             getNearbyPlacesData.execute(dataTransfer);
             Snackbar.make(view, "Showing Nearby Gas Station", Snackbar.LENGTH_SHORT)
@@ -548,6 +560,64 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             snackbar.show();
         }
     }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(Context context, @DrawableRes int vectorDrawableResourceId) {
+        Drawable background = ContextCompat.getDrawable(context, R.drawable.ic_local_gas_station_purple_24dp);
+        background.setBounds(0, 0, background.getIntrinsicWidth(), background.getIntrinsicHeight());
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId);
+        vectorDrawable.setBounds(40, 20, vectorDrawable.getIntrinsicWidth() + 40, vectorDrawable.getIntrinsicHeight() + 20);
+        Bitmap bitmap = Bitmap.createBitmap(background.getIntrinsicWidth(), background.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        background.draw(canvas);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    public void showFirebaseStations() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        db.collection("stations")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                GasStation station = document.toObject(GasStation.class);
+
+                                Log.d(TAG, "station: " + station.getName());
+
+                                LatLng latLng = new LatLng(Double.parseDouble(station.getLatitude()),
+                                        Double.parseDouble(station.getLongitude()));
+                                markerOptions.position(latLng);
+                                markerOptions.title(station.getName() + " : " + station.getLocation());
+                                String snippet = null;
+                                if (!station.getPetrolPrice().equals(' ')) {
+                                    snippet = "Petrol Price: " + station.getPetrolPrice();
+                                }
+                                if (!station.getDieselPrice().equals(' ')) {
+                                    snippet = snippet + " ,Diesel Price: " + station.getDieselPrice();
+                                }
+                                markerOptions.snippet(snippet);
+                                markerOptions.icon(bitmapDescriptorFromVector(getContext(), R.drawable.ic_local_gas_station_purple_24dp));
+//                                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+
+                                mMap.addMarker(markerOptions);
+                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+                                mMap.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
+
+//            Utils.moveCamera(mMap, latLng, DEFAULT_ZOOM);
+
+                            }
+                        } else {
+                            Log.w(TAG, "Error getting documents.", task.getException());
+                        }
+                    }
+                });
+    }
+
 
     private void showAutoCompleteSearch() {
 

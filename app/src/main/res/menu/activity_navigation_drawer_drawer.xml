@@ -8,10 +8,10 @@
             android:id="@+id/nav_map"
             android:icon="@drawable/ic_map_black_24dp"
             android:title="@string/menu_map" />
-        <!--<item-->
-            <!--android:id="@+id/nav_location"-->
-            <!--android:icon="@drawable/quantum_ic_search_grey600_24"-->
-            <!--android:title="Search Locations"/>-->
+        <item
+            android:id="@+id/nav_station_list"
+            android:icon="@drawable/quantum_ic_search_grey600_24"
+            android:title="Stations"/>
         <!--<item-->
             <!--android:id="@+id/nav_location"-->
             <!--android:icon="@drawable/ic_local_gas_station_black_24dp"-->
@@ -27,9 +27,9 @@
             android:title="Suggest Gas Station"/>
 
         <!--<item-->
-            <!--android:id="@+id/nav_setting"-->
-            <!--android:icon="@drawable/ic_menu_manage"-->
-            <!--android:title="@string/menu_setting" />-->
+            <!--android:id="@+id/nav_suggest"-->
+            <!--android:icon="@drawable/ic_add_black_24dp"-->
+            <!--android:title="Suggest Station" />-->
 
     </group>
 
