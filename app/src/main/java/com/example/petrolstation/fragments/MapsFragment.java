@@ -589,24 +589,36 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
                                 Log.d(TAG, "station: " + station.getName());
 
-                                LatLng latLng = new LatLng(Double.parseDouble(station.getLatitude()),
-                                        Double.parseDouble(station.getLongitude()));
-                                markerOptions.position(latLng);
-                                markerOptions.title(station.getName() + " : " + station.getLocation());
-                                String snippet = null;
-                                if (!station.getPetrolPrice().equals(' ')) {
-                                    snippet = "Petrol Price: " + station.getPetrolPrice();
+                                LatLng latLng = null;
+                                try {
+
+                                    latLng = new LatLng(Double.parseDouble(station.getLatitude()),
+                                            Double.parseDouble(station.getLongitude()));
+                                } catch (Exception e) {
+                                    Log.d(TAG, "Error conversion to latlng: " + e);
+                                    Toast.makeText(getContext(),
+                                            "Some staions have invalid latitude and longitude which won't be positioned in map",
+                                            Toast.LENGTH_SHORT).show();
+
                                 }
-                                if (!station.getDieselPrice().equals(' ')) {
-                                    snippet = snippet + " ,Diesel Price: " + station.getDieselPrice();
-                                }
-                                markerOptions.snippet(snippet);
-                                markerOptions.icon(bitmapDescriptorFromVector(getContext(), R.drawable.ic_local_gas_station_purple_24dp));
+                                if (latLng != null) {
+
+                                    markerOptions.position(latLng);
+                                    markerOptions.title(station.getName() + " : " + station.getLocation());
+                                    String snippet = null;
+                                    if (station.getPetrolPrice() != null && !station.getPetrolPrice().equals(' ')) {
+                                        snippet = "Petrol Price: " + station.getPetrolPrice();
+                                    }
+                                    if (station.getDieselPrice() != null && !station.getDieselPrice().equals(' ')) {
+                                        snippet = snippet + " ,Diesel Price: " + station.getDieselPrice();
+                                    }
+                                    markerOptions.snippet(snippet);
+                                    markerOptions.icon(bitmapDescriptorFromVector(getContext(), R.drawable.ic_local_gas_station_purple_24dp));
 //                                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
 
-                                mMap.addMarker(markerOptions);
-                                mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-                                mMap.animateCamera(CameraUpdateFactory.zoomTo(DEFAULT_ZOOM));
+                                    mMap.addMarker(markerOptions);
+
+                                }
 
 //            Utils.moveCamera(mMap, latLng, DEFAULT_ZOOM);
 
@@ -617,7 +629,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                     }
                 });
     }
-
 
     private void showAutoCompleteSearch() {
 
@@ -788,7 +799,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         });
 
     }
-
 
     public void setupSuggestionSection() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(),

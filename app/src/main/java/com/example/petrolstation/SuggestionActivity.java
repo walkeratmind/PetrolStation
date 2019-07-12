@@ -3,6 +3,7 @@ package com.example.petrolstation;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Application;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.annotation.NonNull;
@@ -47,6 +48,14 @@ public class SuggestionActivity extends AppCompatActivity {
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
+        ProgressDialog progress;
+        progress = new ProgressDialog(this);
+        progress.setTitle("Please Wait");
+        progress.setMessage("Adding to database...");
+        progress.setCancelable(true);
+        progress.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+
+
         submitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -60,6 +69,8 @@ public class SuggestionActivity extends AppCompatActivity {
                 station.put("petrolPrice", gasStation.getPetrolPrice());
                 station.put("dieselPrice", gasStation.getDieselPrice());
 
+                progress.show();
+
 // Add a new document with a generated ID
                 db.collection("suggested_station")
                         .add(station)
@@ -70,12 +81,13 @@ public class SuggestionActivity extends AppCompatActivity {
                                 Toast.makeText(SuggestionActivity.this,
                                         "DocumentSnapshot added with ID: " +
                                                 documentReference.getId(), Toast.LENGTH_SHORT).show();
+                                progress.dismiss();
 
                                 AlertDialog.Builder builder = new AlertDialog.Builder(SuggestionActivity.this);
                                 builder
                                         .setTitle("Note")
                                         .setMessage("Thank you for your Suggestion, This will be" +
-                                        "reviewed by admin and will be added soon")
+                                                "reviewed by admin and will be added soon")
                                         .setCancelable(false)
                                         .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                             public void onClick(DialogInterface dialog, int id) {
