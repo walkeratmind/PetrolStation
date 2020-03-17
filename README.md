@@ -12,7 +12,7 @@
 
 ## UI of the App
 
-![](assets/petrol_station_ui.png)
+![petrol_station_ui](assets/petrol_station_ui.png)
 
 ## Thank You ! :smile: :happy:
 
