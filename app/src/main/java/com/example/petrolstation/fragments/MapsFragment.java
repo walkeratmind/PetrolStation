@@ -3,12 +3,17 @@ package com.example.petrolstation.fragments;
 import android.Manifest;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Build;
@@ -16,6 +21,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.SystemClock;
+import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
@@ -41,6 +47,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.arsy.maps_library.MapRadar;
+import com.arsy.maps_library.MapRipple;
 import com.directions.route.AbstractRouting;
 import com.directions.route.Route;
 import com.directions.route.RouteException;
@@ -50,6 +58,7 @@ import com.example.petrolstation.Constants;
 import com.example.petrolstation.GetNearbyPlacesData;
 import com.example.petrolstation.MapsActivity;
 import com.example.petrolstation.R;
+import com.example.petrolstation.models.GasStation;
 import com.example.petrolstation.models.googleMap.PlaceInfo;
 import com.example.petrolstation.utils.Utils;
 import com.google.android.gms.common.ConnectionResult;
@@ -73,6 +82,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.LocationSource;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -97,6 +107,9 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.PlacesClient;
 import com.google.android.libraries.places.widget.AutocompleteSupportFragment;
 import com.google.android.libraries.places.widget.listener.PlaceSelectionListener;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 import com.google.maps.DirectionsApiRequest;
 import com.google.maps.GeoApiContext;
 import com.google.maps.internal.PolylineEncoding;
@@ -214,6 +227,10 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
 //    private AutoCompleteTextView mSearchView;
 
+    // for animation
+    MapRipple mapRipple;
+    MapRadar mapRadar;
+
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -243,6 +260,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         mMap.setOnMyLocationButtonClickListener(new GoogleMap.OnMyLocationButtonClickListener() {
             @Override
             public boolean onMyLocationButtonClick() {
+                // update the device location
+                getDeviceLocation();
                 if (materialSearchBar.isSuggestionsVisible())
                     materialSearchBar.clearSuggestions();
                 if (materialSearchBar.isSearchEnabled())
@@ -251,6 +270,20 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             }
         });
 
+//        mapRadar = new MapRadar(mMap, new LatLng(latitude, longitude), getContext());
+//        //mapRadar.withClockWiseAnticlockwise(true);
+//        mapRadar.withDistance(PROXIMITY_RADIUS);
+//        mapRadar.withClockwiseAnticlockwiseDuration(2);
+//        //mapRadar.withOuterCircleFillColor(Color.parseColor("#12000000"));
+//        mapRadar.withOuterCircleStrokeColor(Color.parseColor("#fccd29"));
+//        //mapRadar.withRadarColors(Color.parseColor("#00000000"), Color.parseColor("#ff000000"));  //starts from transparent to fuly black
+//        mapRadar.withRadarColors(Color.parseColor("#00fccd29"), Color.parseColor("#fffccd29"));  //starts from transparent to fuly black
+//        //mapRadar.withOuterCircleStrokewidth(7);
+//        //mapRadar.withRadarSpeed(5);
+//        mapRadar.withOuterCircleTransparency(0.5f);
+//        mapRadar.withRadarTransparency(0.5f);
+//
+//        mapRadar.startRadarAnimation();
     }
 
     @Nullable
@@ -390,6 +423,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                             } else {
                                 title = "Searched Result";
                             }
+                            Log.d(TAG, "showing nearby gas station of marker");
+                            showNearbyGasStation(view, place.getLatLng().latitude, place.getLatLng().longitude);
+                            // set latitute and longitude of marker
+//                            latitude = place.getLatLng().latitude;
+//                            longitude = place.getLatLng().longitude;
                             mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(title));
                         }
                     }
@@ -417,7 +455,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         showNearbyPlace.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showNearbyGasStation(view);
+                showNearbyGasStation(view, latitude, longitude);
             }
         });
 
@@ -481,10 +519,11 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 //        return super.onOptionsItemSelected(item);
     }
 
-    private void showNearbyGasStation(View view) {
+    private void showNearbyGasStation(View view, double latitude, double longitude) {
 
         if (Utils.isNetworkAvailable(getContext())) {
-            Object dataTransfer[] = new Object[3];
+            showFirebaseStations();
+            Object dataTransfer[] = new Object[4];
             GetNearbyPlacesData getNearbyPlacesData = new GetNearbyPlacesData();
 
             mMap.clear();
@@ -494,6 +533,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             dataTransfer[0] = mMap;
             dataTransfer[1] = url;
             dataTransfer[2] = getContext();
+            dataTransfer[3] = new double[]{latitude, longitude};
 
             getNearbyPlacesData.execute(dataTransfer);
             Snackbar.make(view, "Showing Nearby Gas Station", Snackbar.LENGTH_SHORT)
@@ -506,7 +546,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
                     .setAction("RETRY", new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
-                            showNearbyGasStation(view);
+                            showNearbyGasStation(view, latitude, longitude);
                         }
                     });
 
@@ -519,6 +559,75 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             textView.setTextColor(Color.YELLOW);
             snackbar.show();
         }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(Context context, @DrawableRes int vectorDrawableResourceId) {
+        Drawable background = ContextCompat.getDrawable(context, R.drawable.ic_local_gas_station_purple_24dp);
+        background.setBounds(0, 0, background.getIntrinsicWidth(), background.getIntrinsicHeight());
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorDrawableResourceId);
+        vectorDrawable.setBounds(40, 20, vectorDrawable.getIntrinsicWidth() + 40, vectorDrawable.getIntrinsicHeight() + 20);
+        Bitmap bitmap = Bitmap.createBitmap(background.getIntrinsicWidth(), background.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        background.draw(canvas);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    public void showFirebaseStations() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        MarkerOptions markerOptions = new MarkerOptions();
+
+        db.collection("stations")
+                .get()
+                .addOnCompleteListener(new OnCompleteListener<QuerySnapshot>() {
+                    @Override
+                    public void onComplete(@NonNull Task<QuerySnapshot> task) {
+                        if (task.isSuccessful()) {
+                            for (QueryDocumentSnapshot document : task.getResult()) {
+                                GasStation station = document.toObject(GasStation.class);
+
+                                Log.d(TAG, "station: " + station.getName());
+
+                                LatLng latLng = null;
+                                try {
+
+                                    latLng = new LatLng(Double.parseDouble(station.getLatitude()),
+                                            Double.parseDouble(station.getLongitude()));
+                                } catch (Exception e) {
+                                    Log.d(TAG, "Error conversion to latlng: " + e);
+                                    Toast.makeText(getContext(),
+                                            "Some staions have invalid latitude and longitude which won't be positioned in map",
+                                            Toast.LENGTH_SHORT).show();
+
+                                }
+                                if (latLng != null) {
+
+                                    markerOptions.position(latLng);
+                                    markerOptions.title(station.getName() + " : " + station.getLocation());
+                                    String snippet = null;
+                                    if (station.getPetrolPrice() != null && !station.getPetrolPrice().equals(' ')) {
+                                        snippet = "Petrol Price: " + station.getPetrolPrice();
+                                    }
+                                    if (station.getDieselPrice() != null && !station.getDieselPrice().equals(' ')) {
+                                        snippet = snippet + " ,Diesel Price: " + station.getDieselPrice();
+                                    }
+                                    markerOptions.snippet(snippet);
+                                    markerOptions.icon(bitmapDescriptorFromVector(getContext(), R.drawable.ic_local_gas_station_purple_24dp));
+//                                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE));
+
+                                    mMap.addMarker(markerOptions);
+
+                                }
+
+//            Utils.moveCamera(mMap, latLng, DEFAULT_ZOOM);
+
+                            }
+                        } else {
+                            Log.w(TAG, "Error getting documents.", task.getException());
+                        }
+                    }
+                });
     }
 
     private void showAutoCompleteSearch() {
@@ -618,6 +727,9 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         // set map style
         setSelectedStyle();
 
+        // hide direction and gps pointer
+        mMap.getUiSettings().setMapToolbarEnabled(false);
+
         //check if gps is enabled or not and then request user to enable it
         LocationRequest locationRequest = LocationRequest.create();
         locationRequest.setInterval(10000);
@@ -687,7 +799,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         });
 
     }
-
 
     public void setupSuggestionSection() {
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(),
@@ -915,6 +1026,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         if (location != null) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+            // update the client location
+            mClientLocation = location;
         }
         mLastKnownLocation = location;
         if (currentLocationMarker != null) {
@@ -1091,7 +1204,8 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
             progressDialog = ProgressDialog.show(getContext(), "Please wait.",
                     "Fetching route information.", true);
 
-            start = new LatLng(mClientLocation.getLatitude(), mClientLocation.getLongitude());
+//            start = new LatLng(mClientLocation.getLatitude(), mClientLocation.getLongitude());
+            start = new LatLng(latitude, longitude);
             end = new LatLng(marker.getPosition().latitude, marker.getPosition().longitude);
 
             Routing routing = new Routing.Builder()
@@ -1122,7 +1236,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
 
     @Override
     public void onRoutingFailure(RouteException e) {
-
         // The Routing request failed
         progressDialog.dismiss();
         if (e != null) {
@@ -1148,7 +1261,6 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
         CameraUpdate zoom = CameraUpdateFactory.zoomTo(16);
 
         mMap.moveCamera(center);
-
 
         if (polylines != null && polylines.size() > 0) {
             for (Polyline poly : polylines) {
@@ -1194,7 +1306,7 @@ public class MapsFragment extends Fragment implements OnMapReadyCallback,
     }
 
 
-    // MAP Styles
+    // MAP STYLES
 
     // Show style dialog
     private void showStylesDialog() {

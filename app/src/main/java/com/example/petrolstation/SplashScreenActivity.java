@@ -30,6 +30,9 @@ public class SplashScreenActivity extends AppCompatActivity {
 
             @Override
             public void run() {
+                // stop the animation
+//                lottieAnimationView.pauseAnimation();
+
                 // This method will be executed once the timer is over
                 // Start your app main activity
                 Intent i = new Intent(SplashScreenActivity.this, MainActivity.class);

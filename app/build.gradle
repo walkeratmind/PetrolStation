@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.google.gms.google-services'
 
 android {
     compileOptions {
@@ -14,6 +15,8 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
+        multiDexEnabled true
+
     }
     buildTypes {
         release {
@@ -36,6 +39,7 @@ dependencies {
     implementation 'com.google.android.libraries.places:places:1.1.0'
 
     implementation 'com.android.support:support-vector-drawable:28.0.0'
+    implementation 'com.google.firebase:firebase-database:16.0.4'
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
@@ -60,6 +64,21 @@ dependencies {
     // For Routing
     implementation 'com.github.jd-alexander:library:1.1.0'
 
-
+    // For animation
     implementation 'com.airbnb.android:lottie:2.5.5'
+
+    // For about us page
+    implementation 'com.github.medyo:android-about-page:1.2.5'
+
+    // For Animation
+    implementation 'com.github.aarsy.googlemapsanimations:googlemapsanimations:1.0.5'
+
+    // For Firestore
+    implementation 'com.google.firebase:firebase-firestore:18.1.0'
+    implementation 'com.google.firebase:firebase-core:16.0.6'
+    implementation 'com.firebaseui:firebase-ui-database:3.2.2'
+
+    implementation 'com.android.support:multidex:1.0.3'
+
+
 }

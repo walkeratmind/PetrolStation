@@ -34,12 +34,14 @@ import org.jsoup.nodes.Document;
 
 import java.util.ArrayList;
 
+
+
 public class DetailsFragment extends Fragment {
 
     private static final String TAG = "DetailsFragment";
 
     // URL of a website...
-    String url = "http://nepaloil.com.np/retailprice";
+    String url = "http://noc.org.np/retailprice";
     Document content;
     String body = "nothing";
 

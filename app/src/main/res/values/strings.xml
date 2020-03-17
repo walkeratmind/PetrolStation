@@ -3,7 +3,7 @@
     <string name="title_activity_maps">Map</string>
 
 
-    <string name="GOOGLE_MAPS_API_KEY">AIzaSyCJP6_soVTeMM8z-tkhg-au0HmHvvRv0Uw</string>
+    <string name="GOOGLE_MAPS_API_KEY">AIzaSyCUF4IOaMKIk8xSBdeDKd2Rc-bt0dAsXC0</string>
     <string name="title_activity_bottom_navigation">BottomNavigationActivity</string>
     <string name="title_home">Home</string>
     <string name="title_dashboard">Dashboard</string>
@@ -39,5 +39,8 @@
     <string name="style_label_default">Default</string>
     <string name="style_choose">Choose style</string>
     <string name="style_set_to">Style set to: %1$s</string>
+
+    <!-- For About Us Page -->
+    <string name="copy_right" translatable="false">Copyrights © %1$d</string>
 
 </resources>
